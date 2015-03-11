@@ -1,0 +1,42 @@
+---
+title: "Utility tests"
+output: html_document
+---
+
+#### Does function `findPixelCrossings` find the right pixel crossings?
+
+
+```{r fig.align='center', fig.show='hold'}
+source("../R/utilities.R")
+# Create an 8x8 square grid
+hg <- 0:8
+vg <- 0:8
+# Plot it in a square window
+mai <- par("mai")
+par(mai=adj_margins())
+plot(c(-.25, 8.25), c(-.25, 8.25), type='n', xlab="z", ylab="x", main="Testing findPixelCrossings")
+par(mai=mai)
+abline(h=hg, lwd=2, col="lightblue")
+abline(v=vg, lwd=2, col="lightblue")
+# Draw a horizontal line at x = 0.5
+abline(h=0.5, lwd=3)
+# This line has m=0, b=0.5. Find the pixel crossings
+pcs <- findPixelCrossings(hg, vg, 0.5, 0.0)
+# Plot them
+points(x ~ z, pcs, pch=19, col="red")
+# Draw a line from (0, 1.5) to (8, 4.5)
+m <- (4.5-0.5)/8
+b <- 1.5
+abline(b, m, lwd=3)
+# Find and plot the pixel crossings
+pcs <-findPixelCrossings(hg, vg, b, m)
+points(x ~ z, pcs, pch=19, col="blue")
+# Draw a line from (0, 7.5) to (8, 6.5)
+m <- (6.5-7.5)/8
+b <- 7.5
+abline(b, m, lwd=3)
+# Find and plot the pixel crossings
+pcs <-findPixelCrossings(hg, vg, b, m)
+points(x ~ z, pcs, pch=19, col="magenta")
+```
+
