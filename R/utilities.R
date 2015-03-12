@@ -38,3 +38,17 @@ adj_margins <- function(){
   }
   mai
 }
+
+# Returns a 2x51 matrix representing the vertices of a
+# polygon with approximates the ellipse formed by 
+# applying the 2x2 matrix, M, to a circle of radius
+# r which is centered at the origin.
+# If result <- ellipse(r, M), use
+# polygon(x+result[1,], y+result[2,]) to plot the
+# the ellipse centered at x, y.
+ellipse <- function(r, M=matrix(c(1,0,0,1), 2, 2)){
+  theta <- seq(0, 2*pi, length.out = 51)
+  temp <- r*cbind(cos(theta), sin(theta)) %*% M
+  colnames(temp) <- c("x", "y")
+  return(temp)
+}
