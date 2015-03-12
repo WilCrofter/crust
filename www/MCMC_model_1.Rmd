@@ -1,0 +1,44 @@
+---
+title: "Simple MCMC model"
+date: "03/12/2015"
+output: html_document
+---
+
+Trying to reconstruct an image by Markov chain Monte Carlo methods is essentially a learning exercise. We therefore want the MCMC model as simple as possible. If it seems to have promise we can make it more elaborate later.
+
+We'll assume a phantom target consisting of a spherical water and a spherical alcohol compartment embedded in silicon. (Water and alcohol may or may not appear in the same slice.)
+
+```{r echo=FALSE, fig.align='center', fig.show='hold'}
+source("../R/utilities.R")
+mai=par("mai")
+par(mai=adj_margins())
+plot(0:1, 0:1, type='n', xlab="z", ylab="x", xaxt="n", yaxt="n", bty="n", cex.lab=2, main="Phantom Slice")
+par(mai=mai)
+rect(0,0,1,1,col="gray", lwd=5)
+water <- ellipse(.15)
+water[,1] <- water[,1]+.35
+water[,2] <- water[,2]+.55
+polygon(water, border=NA, col="turquoise2")
+text(.35, .55, "Water")
+alcohol <- ellipse(.1)
+alcohol[,1] <- alcohol[,1]+.7
+alcohol[,2] <- alcohol[,2]+.4
+polygon(alcohol, border=NA, col="mistyrose2")
+text(.7, .4, "Alcohol")
+abline(.5, -.1, lwd=5, col="white")
+legend(0,1, legend=c("Ultrasound"), lwd=5, col="white", bg="lightgray")
+```
+
+Assuming ultrasound arrays of 64 elements and a 64x64 pixel image, a simple MCMC model is described below. (We ignore the fact that technical details may limit transmitting elements to 63.)
+
+For each of the 64x64 ultrasound trajectories, we assume time of flight in pure silicon is subtracted from the measured time of flight, as in diff (as we understand it.) Slowness values are corresponding differences with slowness in silicon.
+
+Our model is that one of three slowness values (water minus silicon, 0, and alcohol minus silicon) has been selected at random for each pixel. Times of flight were then measured with error described by normal distributions with mean zero and small, known variance. Thus, for any tentative assignment of slowness values to pixels, b, we can compute the likelihood, L(ToF | b), of the actual ToF measurments. Here, b is a 64x64 array of pixels and ToF is the array of observed times of flight.
+
+MCMC is a technique for sampling from the model's *posterior* distribution, P(b | ToF), the probability of b given the observed times of flight. It is guaranteed to work in the limit. The question is how long it will take to approach the limit.
+
+The algorithm, known as Metropolis-Hastings, is simple. If b is our current proposed image, we vary it in some reversible way to obtain b'. We then compute the ratio $$q = \frac{L(ToF | b')}{L(ToF | b)}.$$ If $q \ge 1$ we replace b by b'. If $q < 1$ we replace b by b' with probability q. The sequence of b's forms a Markov chain of order 1 whose stationary distribution is P(b | ToF). (Proof omitted here, but will be supplied at least by reference in time.)
+
+We'll vary the current b by choosing a pixel, $b_{i,j}$ at random and replacing its current slowness value with one of the other two at random. This is known as Gibbs sampling.
+
+After a runup period of as yet undetermined length to allow for convergence, we'll aggregate sample means and variances of the slowness values in each pixel. The means will constitute the recovered image, the variances a measure of uncertainty in their values.
