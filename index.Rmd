@@ -5,5 +5,5 @@ output: html_document
 
 #### Notes in reverse chronological order.
 
-* [Test utility to find pixel crossings](www/utilTests.html)
 * [Description of simple MCMC model for image reconstruction](www/MCMC_model_1.html)
+* [Test utility to find pixel crossings](www/utilTests.html)
