@@ -6,6 +6,8 @@ output: html_document
 
 Trying to reconstruct an image by Markov chain Monte Carlo methods is essentially a learning exercise. We therefore want the MCMC model as simple as possible. If it seems to have promise we can make it more elaborate later.
 
+REMARK: We will probably *not* code the model described below. Convergence is likely to be atypical, too much like that of a discrete hill climbing method in which you change a pixel and see if you get closer to the observation.
+
 We'll assume a phantom target consisting of a spherical water and a spherical alcohol compartment embedded in silicon. (Water and alcohol may or may not appear in the same slice.)
 
 ```{r echo=FALSE, fig.align='center', fig.show='hold'}
