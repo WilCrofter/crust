@@ -1,0 +1,32 @@
+---
+title: "Time and memory: Moore-Penrose inversion of random matrices"
+output: html_document
+---
+
+Let $2^n$ be the number of elements in an ultrasound array. Then there are on the order of $2^{2n}$ pixels and $2^{2n}$ paths from transmitters to receivers. Each path will intersect on the order of $2^n$ pixels, hence there are on the order of $2^{3n}$ intersections. The length of each must be available or recomputed on demand.
+
+The figure illustrates the case for $n=4.$
+
+```{r echo=FALSE, fig.align='center', fig.show='hold'}
+source("../R/utilities.R")
+mai <- par("mai")
+par(mai=adj_margins())
+plot(0:18, 0:18, type="n", xlab="z", ylab="x", cex.lab=1.5, bty="n", xaxt="n", yaxt="n", main=expression(paste( 2^4 %*% 2^4, "  pixels")), cex.main=1.5)
+par(mai=mai)
+segments(c(1:17), rep(1,17), c(1:17), rep(17,17), lwd=2, col="blue")
+segments(rep(1,17), c(1:17), rep(17,17), c(1:17), lwd=2, col="blue")
+points(rep(0,16), 1:16+.5, pch=15)
+points(rep(18,16), 1:16+.5, pch=0)
+text(0,17, expression(paste(2^4, " xmtrs")), pos=3, cex=1.1)
+text(18,17, expression(paste(2^4, " rcvrs")), pos=3, cex=1.1)
+segments(1, 3.5, 17, 12.5, lwd=6, col="magenta")
+text(9, 0, expression(paste(2^4 %*% 2^4, " paths, each hitting ~", 2^4, " pixels")), col="magenta", cex=1.25)
+```
+
+In the equation,$$ToF = S \times b,$$$b$ which represents pixels, and $ToF$ which represents measured times of flight, are vectors of length $2^{2n}$. The matrix, $S$, which represents lengths of path and pixel intersections is theoretically $2^{2n} \times 2^{2n}$, hence would have $2^{4n}$ elements but only about $2^{3n}$ nonzero elements.
+
+For $n \le 7$, $2^{3n}$ is not prohibitive for commodity hardware and software; $2^{4n}$ may be.
+
+For a random matrix, R's Moore-Penrose inversion times scale as $m^{2.33}$ where the matrix has $m$ rows and and columns. In our case $m=2^{2n}$ and about 13 seconds are required for Moore-Penrose inversion for $n=10$ on a 64-bit 4x200 MHz CPU. For $n=12$ (ultrasound array of 64 elements,) inversion would take about 5.5 minutes, and for $n=14$ (ultrasound array of 128 elements) somewhat more than 2 hours. (In the last case, memory requirements may exceed default settings on the referenced machine.)
+
+Of course, no attempt was made to optimize. Test matrices were random, not sparse, and R's default Moore-Penrose inversion function, `gint` in package `MASS`, was used. R's `Matrix` package has specialized functions, including Moore-Penrose, for sparse matrices.

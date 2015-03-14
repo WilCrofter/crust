@@ -5,5 +5,6 @@ output: html_document
 
 #### Notes in reverse chronological order.
 
+* [Time and Memory: Moore-Penrose inversion of random matrices](www/time_memory_1.html)
 * [Description of simple MCMC model for image reconstruction](www/MCMC_model_1.html)
 * [Test utility to find pixel crossings](www/utilTests.html)
