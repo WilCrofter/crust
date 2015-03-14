@@ -1,5 +1,5 @@
-# Given horizontal grid lines crossing the x (vertical) axis at, hg[i] = i*dx, 
-# vertical grid lines crossing the z (horizontal) axis at vg[j] = j*dz, 
+# Given horizontal grid lines crossing the x (vertical) axis at points x=hg[i], 
+# vertical grid lines crossing the z (horizontal) axis at points z=vg[j], 
 # and the coefficients of a line, b, and m  where x = b + m*z, 
 # derive the sequence of points at which the line crosses a grid line.
 findPixelCrossings <- function(hg, vg, b, m){
@@ -20,6 +20,8 @@ findPixelCrossings <- function(hg, vg, b, m){
   # Order the crossings by the z (horizontal) coordinates
   crossings <- crossings[order(crossings[,"z"]), ]
 }
+
+
 
 # compute margins which make plot window square
 adj_margins <- function(){
