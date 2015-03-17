@@ -21,6 +21,36 @@ findPixelCrossings <- function(hg, vg, b, m){
   crossings <- crossings[order(crossings[,"z"]), ]
 }
 
+# Find the transmitter-receiver pairs whose US signal will cross a given pixel.
+# cornerA, cornerB -- (x, z) coordinates of opposing pixel corners, e.g., lower left and upper right.
+# xmit -- the x (vertical) coordinates of the transmitter array, xmit[1], xmit[2], etc.
+# zxmit -- the z coordinate of the transmitter array.
+# rcv -- the x coordinates of the receiver array.
+# zrcv -- the z coordinate of the receiver array.
+findLinesCrossingPixel <- function(cornerA, cornerB, xmit, zxmit, rcv, zrcv){
+  # Find coordinates of grid lines which bound the pixel
+  zgrids <- range(cornerA[1], cornerB[1])
+  xgrids <- range(cornerA[2], cornerB[2])
+  # A line segment drawn between transmitter and receiver is a convex
+  # combination of the two endpoints: (1-lambda)*v1 + lambda*v2,
+  # where lambda is between 0 and 1, and v1, v2 are the endpoint coordinate
+  # vectors. Such a lambda will exist if and only if the the endpoint coordinates
+  # satisfy certain inequalities. A range of possible lambdas can be derived using
+  # inequality constraints on the z coordinate.
+  lrange <- range((zgrids - zxmit)/(zrcv-zxmit))
+  # Given lrange and the x coordinates of a transmitter and receiver, find the range
+  # of x coordinates which can be obtained with lambda in lrange.
+  x_mins <- apply(cbind((xgrids[1]-(1-lrange[1])*xmit)/lrange[1], 
+                           (xgrids[1]-(1-lrange[2])*xmit)/lrange[2]),
+                     1, min)
+  x_maxs <- apply(cbind((xgrids[2]-(1-lrange[1])*xmit)/lrange[1], 
+                           (xgrids[2]-(1-lrange[2])*xmit)/lrange[2]),
+                     1, max)
+  
+  # Return a list of receivers for each transmitter. Strict inequalities insure
+  # that a line actually enters the pixel rather than just grazing a boundary.
+  lapply(1:length(xmit), function(n)rcv[rcv > x_mins[n] & rcv < x_maxs[n]])
+}
 
 
 # compute margins which make plot window square
