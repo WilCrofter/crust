@@ -41,3 +41,40 @@ pcs <-findPixelCrossings(hg, vg, b, m)
 points(x ~ z, pcs, pch=19, col="magenta")
 ```
 
+#### Does function `findLinesCrossingPixel` find the right lines?
+
+Testing a function which finds all lines intersecting a given pixel.
+
+```{r fig.align='center', fig.show='hold'}
+testPixel <- function(pixel){
+  # Create an 8x8 square grid
+  hg <- 0:8
+  vg <- 0:8
+  # Plot it in a square window
+  mai <- par("mai")
+  par(mai=adj_margins())
+  plot(c(-.25, 8.25), c(-.25, 8.25), type='n', xlab="z", ylab="x", main=paste("Testing pixel (", pixel[1], ",", pixel[2],")"))
+  par(mai=mai)
+  # Mark the pixel in pink
+  rect(pixel[1], pixel[2], pixel[1]+1, pixel[2]+1, col="pink")
+  abline(h=hg, lwd=2, col="lightblue")
+  abline(v=vg, lwd=2, col="lightblue")
+  # Put a transmitter array at z=0 and a receiver array at z=8
+  xmit <- .5+0:7
+  zxmit <- 0
+  rcv <- .5+0:7
+  zrcv <- 8
+  points(rep(zxmit,8), xmit, pch=15)
+  points(rep(zrcv,8), rcv, pch=0)
+  crossers <- findLinesCrossingPixel(pixel, pixel+1, xmit, zxmit, rcv, zrcv)
+  for(i in 1:length(xmit)){
+    for(xcoord in crossers[[i]]){
+      segments(zxmit, xmit[i], zrcv, xcoord, lwd=2)
+      }
+    }
+  }
+testPixel(c(0,0))
+testPixel(c(1,2))
+testPixel(c(2,4))
+testPixel(c(5,5))
+```
