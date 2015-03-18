@@ -5,6 +5,7 @@ output: html_document
 
 #### Notes in reverse chronological order.
 
+* [Distribution of transmit-receive paths through a pixel](www/distr_lines_thru_pixel.html)
 * [Time and Memory: Moore-Penrose inversion of random matrices](www/time_memory_1.html)
 * [Description of simple MCMC model for image reconstruction](www/MCMC_model_1.html)
-* [Test utility to find pixel crossings](www/utilTests.html)
+* [Test utilities to find pixel crossings](www/utilTests.html)
