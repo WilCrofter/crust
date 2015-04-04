@@ -1,11 +1,11 @@
 ---
-title: "Notes on Radon and MCMC"
+title: "Radon and projection slice"
 author: "W. Bauer"
 date: "04/03/2015"
 output: html_document
 ---
 
-These are brief notes on the Radon transform, the projection slice theorem, and Markov chain Monte Carlo. The references provide formal treatments.
+These are brief notes on the Radon transform and the projection slice theorem. The references provide formal treatments.
 
 ### The Radon transform
 
@@ -15,7 +15,7 @@ The *back projection operator* or *dual Radon transform* is defined on function,
 
 A *ramp filter* is most easily explained in terms of a Fourier transform. Given $$\hat{g}(\phi, \omega) = \frac{1}{\sqrt{2\pi}} \int_{-\infty}^{\infty}g(\phi, s)e^{-i s\omega}dx,$$the ramp filter is multiplication by the magnitude of $\omega$:$$\hat{g}(\phi, \omega) \mapsto |\omega|\hat{g}(\phi, \omega).$$ Application of the ramp filter consists of taking the Fourier transform with respect to $s$, multiplying by $|\omega|$ and inverting the Fourier transform. 
 
-The Radon transform can be inverted by applying a *ramp filter* followed by the back projection operator:$$f = R^*\Omega Rf$$where $\Omega$ represents application of the ramp filter. However, this theoretically ideal and computationally efficient method of image reconstruction requires that $Rf(\phi, s)$ be available for all lines, $L_{\phi, s},$ in the plane. In practice, it will be measured for a finite set of lines. Discrete approximations to the inversion formula tend to be sensitive to noise. As computation has become cheaper, statistical methods have become popular.
+The Radon transform can be inverted by applying the ramp filter followed by the back projection operator:$$f = R^*\Omega Rf$$where $\Omega$ represents application of the ramp filter. However, this theoretically ideal and computationally efficient method of image reconstruction requires that $Rf(\phi, s)$ be available for all lines, $L_{\phi, s},$ in the plane. In practice, it will be available only for a finite set of lines. Since discrete approximations to the inversion formula tend to be sensitive to noise, more robust statistical methods are replacing back projection for image recovery.
 
 ### The projection slice theorem
 
