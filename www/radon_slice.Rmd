@@ -1,0 +1,36 @@
+---
+title: "Radon and projection slice"
+author: "W. Bauer"
+date: "04/03/2015"
+output: html_document
+---
+
+These are brief notes on the Radon transform and the projection slice theorem. The references provide formal treatments.
+
+### The Radon transform
+
+A line in the plane may be defined by an angle, $\phi$, and a constant, $s$, and parameterized by a variable, $t$, as follows:$$L_{\phi, s}(t) = s(cos\phi, sin\phi) + t(-sin\phi, cos\phi).$$If $f(z,x)$ is a real-valued function of two real variables, its *Radon transform* is $$Rf(\phi, s) \equiv \int_{-\infty}^{\infty}f\left(L_{\phi, s}(t)\right)dt.$$In other words, the Radon transform at $\phi$ and $s$ is the integral of $f$ along the line defined by $\phi$ and $s$. Note that $Rf(\phi, s)$ is a function of an angle, $\phi \in [0,2\pi],$ and a real variable, $s$.
+
+The *back projection operator* or *dual Radon transform* is defined on function, $g(\phi, s)$ of an angle, $\phi \in [0, 2\pi]$, and a real variable $x$:$$R^*g(z, x) = \int_0^{2\pi}g(\phi, z\cdot cos\phi+x\cdot sin\phi)d\phi.$$Note that $R^*$ can be applied to $Rf$, and that $R$ can be applied to $R^*g$.
+
+A *ramp filter* is most easily explained in terms of a Fourier transform. Given $$\hat{g}(\phi, \omega) = \frac{1}{\sqrt{2\pi}} \int_{-\infty}^{\infty}g(\phi, s)e^{-i s\omega}dx,$$the ramp filter is multiplication by the magnitude of $\omega$:$$\hat{g}(\phi, \omega) \mapsto |\omega|\hat{g}(\phi, \omega).$$ Application of the ramp filter consists of taking the Fourier transform with respect to $s$, multiplying by $|\omega|$ and inverting the Fourier transform. 
+
+The Radon transform can be inverted by applying the ramp filter followed by the back projection operator:$$f = R^*\Omega Rf$$where $\Omega$ represents application of the ramp filter. However, this theoretically ideal and computationally efficient method of image reconstruction requires that $Rf(\phi, s)$ be available for all lines, $L_{\phi, s},$ in the plane. In practice, it will be available only for a finite set of lines. Since discrete approximations to the inversion formula tend to be sensitive to noise, more robust statistical methods are replacing back projection for image recovery.
+
+### The projection slice theorem
+
+For any function $h(s)$ with a finite maximum absolute value,$$\int_{-\infty}^{\infty}Rf(\phi, s)h(s)dx =  \int_{-\infty}^{\infty}\int_{-\infty}^{\infty}f(z, x)h(z\cdot cos\phi + x \cdot sin\phi)dzdx.$$Thus a one dimensional inner product of $Rf$ with $h$ is equal to a two dimensional inner product of $f$ with a function closely related to $h$. Since projections on basis functions are inner products, judicious choice of $h$ could conceivably aid in reconstruction of $f$.
+
+The Fourier slice theorem, in which $h_{\omega}(s) = e^{-i \omega s}$, is a special case which relates the 1 dimensional Fourier transform of $Rf(\phi, s)$ with respect to $s$ with a "slice" of the 2 dimensional Fourier transform of $f$.$$\int_{-\infty}^{\infty}Rf(\phi,s)e^{-i\omega s}ds = \int_{-\infty}^{\infty}\int_{-\infty}^{\infty}f(z,x)e^{-i\omega (z\cdot cos\phi + s\cdot sin\phi)}dzdx \\ = \hat{f}(\omega \cdot cos\phi, \omega \cdot sin\phi).$$For fixed $\phi$, the last expression is the 2 dimensional Fourier transform of $f$ on the line, or slice, consisting of multiples of the unit vector $(cos\phi, sin\phi)$.
+
+
+
+### References:
+
+Radon's original paper, in German, was published in 1917, as "Über die Bestimmung von Funktionen durch ihre Integralwerte längs gewisser Mannigfaltigkeiten." It was republished in *Classic Papers in Modern Diagnostic Radiology,* edited by Adrian M. K. Thomas, Arpan K. Banerjee, Uwe Busch, Springer Science & Business Media, Dec 5, 2005, [Link to Google Books excerpt](http://books.google.com/books?hl=en&lr=&id=zgezC3Osm8QC&oi=fnd&pg=PA5&dq=J+Radon&ots=RdpAO_NgyJ&sig=2Cbm2EUDskmHMNeRP_FQvihmqdo#v=onepage&q=J%20Radon&f=false)
+
+An English translation by J. C. Parks, *On The Determination of Functions From Their Integral Values Along Certain Manifolds*, was published in IEEE TRANSACTIONS ON MEDICAL IMAGING, VOL. MI-5, NO. 4, DECEMBER 1986. [Official version](http://ieeexplore.ieee.org/xpl/login.jsp?tp=&arnumber=4307775&url=http%3A%2F%2Fieeexplore.ieee.org%2Fxpls%2Fabs_all.jsp%3Farnumber%3D4307775). [Ungated version](http://equinto.math.tufts.edu/research/sc-article.pdf).
+
+I've also used "An Introduction to X-ray tomography and Radon Transforms" by Eric Todd Quinto, published in *The Radon Transform and Applications to Inverse Problems* (Providence, RI, USA), AMS Proceedings of Symposia in Applied Mathematics, American Mathematical Society, 2006. [Ungated version](http://equinto.math.tufts.edu/research/sc-article.pdf).
+
+And [Wikipedia](http://en.wikipedia.org/wiki/Radon_transform).
