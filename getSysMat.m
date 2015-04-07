@@ -1,6 +1,7 @@
 function SM = getSysMat (pos_source, pos_probe_elem, gridx, gridz)
 % Fereshteh Added: 
 % Assumptions: No ray is perpendicular to Z-axis, dx and dz are constant
+% Ref: Siddon's paper Fast calculation of the exact radiological path for a threedimensional CT array
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % pos_probe_elem: [x,z]* # of elements, N*2
 % pos_source: [x,z], 1*2
