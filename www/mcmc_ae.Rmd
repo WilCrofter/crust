@@ -1,0 +1,14 @@
+---
+title: "Statistical model of active echo imaging"
+author: "W. Bauer"
+date: "04/16/2015"
+output: html_document
+---
+
+The Universal UR5 robot arm advertises 0.1 mm repeatability. Assume this value represents standard deviation in quantities which depend on the arm's position.
+
+The first step in calibration is, for each of 28 poses, to estimate the position of the active echo (AE) in the image frame, i.e., the coordinate frame of the transducer array. Our interest here is a statistical model for AE position estimation for a single pose.
+
+The pose is first adjusted so that the AE is in the midplane of the image frame, i.e., so that its y coordinate, $p_y,$ is nominally zero. Distances, $r_1,\:r_2,\ldots,\:r_N$ between the AE and the $N$ transducer elements are measured via time of flight. Since all of these measurements depend on position of the robot arm, they are subject to errors which we will model as normally distributed with mean zero and standard deviation 0.1 mm.
+
+Given a putative position, $p = (p_z, p_x, p_y),$ of the AE in the image frame, let $d_1(p)\:,\ldots,\:d_N(p)$ be the computed distances between the $N$ transducer elements. I.e., if $t_{i,x}$ represents the x coordinate of the $i^{th}$ transducer, then$$d_i(p) = \sqrt{p_z^2 + (p_x-t_{i,x})^2 + p_y^2}\:\:i=1,\:\ldots\:,N.$$The corresponding likehood of the measurements given $p$ is thus,$$P(r_1,\:\ldots\:,r_N | p) = (2\pi)^{-N/2}e^{-\sum_{i=1}^N(r_i-d_i(p))^2/\sigma^2},$$where $\sigma=0.1.$
