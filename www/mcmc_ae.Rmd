@@ -5,6 +5,10 @@ date: "04/16/2015"
 output: html_document
 ---
 
+As with all these github notes, the following is provisional. It's a first step toward a statistical model of calibration, but is based on an understanding which is still, let's say, in development.
+
+### Setup
+
 The Universal UR5 robot arm advertises 0.1 mm repeatability. Assume this value represents standard deviation in quantities which depend on the arm's position.
 
 The first step in calibration is, for each of 28 poses, to estimate the position of the active echo (AE) in the image frame, i.e., the coordinate frame of the transducer array. Our interest here is a statistical model for AE position estimation for a single pose.
@@ -21,33 +25,135 @@ The denominator in equation 2 is a constant, but very difficult to determine in 
 
 To create data for experimentation, suppose we have a 128 element transducer array with elements spaced at 0.25 mm intervals. Thus $t_{i, x} = 0.25i,\:\:i=1,\:\ldots\:,128.$ (Transducer z and y coordinates would be zero in the image frame.) Suppose the AE is crudely estimated to be somewhere in a 10 mm by 10 mm square centered at $x = 16 mm,\:z=20mm.$ We generate a random point, `p_actual`, with x and z coordinates in this square, and a y coordinate representing midplane error.
 
+NOTE: Since only the square of $p_y$ appears in the above formulation, it provides no way to distinguish between positive or negative values of $p_y.$ In what follows, we'll treat $p_y$ as positive for programming convenience. Though it is also true that only the square of $p_z$ appears, we know that the AE is in front of the transducer array, hence that $p_z \gt 0$.   
+
 ```{r}
 set.seed(1429305885) # System time when the line was written.
-p_actual <- c(runif(1, 11, 21), runif(1, 15, 25), rnorm(1, mean=0, sd=0.1))
+p_actual <- c(runif(1, 11, 21), runif(1, 15, 25), abs(rnorm(1, mean=0, sd=0.1)))
 p_actual
 ```
 
 Distances between points and transducers must be computed frequently, so we write a function for the purpose.
 
 ```{r}
-getDistances <- function(p){
-  if(!is.numeric(p[1]))print(p)
-  sapply(0.25*(1:128), function(tx)sqrt(p[1]^2 + (p[2]-tx)^2 + p[3]^2))
+getDistances <- function(point){
+  sapply(0.25*(1:128), function(tx)sqrt(point[1]^2 + (point[2]-tx)^2 + point[3]^2))
 }
 ```
 
-We'll apply this function to `p_actual` and add errors to form $r = (r_1,\:\ldots\:,r_128).$
+We'll apply this function to `p_actual` and add errors to form $r = (r_1,\:\ldots\:,r_128).$ These numbers will constitute our "data."
 
 ```{r}
 r <- getDistances(p_actual) + rnorm(128, mean=0, sd=0.1)
 ```
 
-Because the exponentiation on right side of *equation 3* can challenge precision, we'll write a function to compute the exponent itself, i.e., the natural log of the right side. We assume the argument, `p`, is within the specified square. 
+Because the exponents on right side of *equation 3* can be large negative numbers, we'll write a function to compute only the exponent itself, i.e., the natural log of *equation 3.* We assume the argument, `point`, is within the specified square. 
 
 ```{r}
-q <- function(p, r, sigma){
-  d <- getDistances(p)
-  -(p[3]^2 + sum((r-d)^2))/(2*sigma^2)
+ln_prob <- function(point, r, sigma){
+  d <- getDistances(point)
+  -(point[3]^2 + sum((r-d)^2))/(2*sigma^2)
   }
+```
+
+The function computes a log probability only up to an additive constant, but we'll abuse terminology and refer to it as a log probability.
+
+### MCMC
+
+The Metropolis-Hastings algorithm is a general purpose way to generate samples with correct relative frequencies, given only an expression such as *equation 3*. The algorithm does so by constructing a Markov chain whose stationary distribution is guaranteed to be the one desired. Because a stationary distribution is approached asymptotically, a "burn-in" period is required.
+
+The length of a burn-in period can be shortened by starting the algorithm at a point with relatively high probability. Otherwise, the algorithm must "climb" to such a point before it begins to generate samples with correct relative frequencies.
+
+In our case of intersecting circles it would be easy to solve for such a point. However, we'll employ a more general technique which is to generate 100 points at random and find the one with maximum log probability. This gives us a better than 99% chance of starting from a point in the 95$^{th}$ percentile, i.e., $1-.99^{100} \gt .95$
+
+```{r}
+n <- 100
+# Create n points at random
+temp <- cbind(runif(n, 11, 21), runif(n, 15, 25), abs(rnorm(n, mean=0, sd=0.1)))
+# For each, calculate log probability
+lls <- sapply(1:n, function(i)ln_prob(temp[i,], r, 0.1))
+# Find the index of the maximum log probability
+idx <- which.max(lls)
+# Find the associated point
+p_start <- temp[idx,]
+# Clean up
+rm(n, temp, lls, idx)
+rbind(p_actual=p_actual, p_start=p_start)
+```
+
+Our starting point is a fair approximation to the actual position. However, our objective is not to approximate, but to generate samples with correct relative frequencies. Given a point, `p`, we'll change it slightly to create another point, `q`, then choose `p` or `q` as our next sample, according to the ratio of their associated probabilities as prescribed by Metropolis-Hastings. This is the "accept-reject" procedure which is the heart of Metropolis-Hastings.
+
+```{r}
+accept_reject <- function(p, r, sigma){
+  # Create q by slight perturbations of p
+  q <- p + runif(3, -sigma*0.05, sigma*0.05)
+  # Be sure q is within allowable limits
+  q[1] <- max(11, min(q[1], 21))
+  q[2] <- max(15, min(q[2], 25))
+  q[3] <- max(0, q[3])
+  # Compute log probabilities
+  lpp <- ln_prob(p, r, sigma)
+  lpq <- ln_prob(q, r, sigma)
+  if(lpq > lpp){
+    # If q is more probable, accept it 
+    return(q)
+    } else {
+      # If q is less probable, accept it with probability
+      # equal to the ratio of its probability to p's.
+      if(log(runif(1)) < lpq-lpp){
+        return(q)
+        } else {
+          return(p)
+          }
+      }
+  }
+```
+
+Markov chain Monte Carlo just applies this function repeatedly, accumulating samples.
+
+```{r}
+generateSamples <- function(n, p_start, r, sigma){
+  samples <- p <- p_start
+  for(i in 2:n){
+    p <- accept_reject(p, r, sigma); 
+    samples <- cbind(samples, p)
+    }
+  samples
+}
+```
+
+We'll first generate 5000 samples, and use mean values to assess burn-in.
+
+```{r fig.align='center', fig.show='hold'}
+# Form the samples
+samples <- generateSamples(5000, p_start, r, 0.1)
+# Find means of adjacent 100-long stretches
+temp <- sapply(seq(1, 4900, by=100), function(i)rowMeans(samples[,i:(i+99)]))
+# Plot results, scaled for comparison
+matplot(seq(1, 4900, by=100), scale(t(temp)), type='l', lwd=3, lty=1, xlab="sample number", ylab="mean values, scaled for comparison", main="Sample means of disjoint 100-long windows")
+legend("topright", c(expression(p[z]), expression(p[x]), expression(p[y])), lwd=3, col=1:3)
+```
+
+Judging from the figure, burn-in occurs by sample number 1000. We'll retain only samples from 1001 through 5000.
+
+```{r}
+samples <- samples[,1001:5000]
+```
+
+
+Since samples are generated by a Markov process, successive samples will be correlated. It is common practice to "thin" the generated sequence until correlations are insignificant. We use autocorrelations of each component to judge how much the samples should be thinned. 
+
+```{r}
+par(mfrow=c(1,3))
+pacf(samples[1,], main=expression(p[z]), lwd=3)
+pacf(samples[2,], main=expression(p[x]), lwd=3)
+pacf(samples[3,], main=expression(p[y]), lwd=3)
+par(mfrow=c(1,1))
+```
+
+Autocorrelations are essentially insignificant (within the broken, blue lines) by 5 sample delays. We thus thin to every 5th sample.
+
+```{r}
+samples <- samples[, seq(1, 4000, by=5)]
 ```
 
