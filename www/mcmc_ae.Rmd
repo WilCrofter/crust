@@ -1,0 +1,179 @@
+---
+title: "Statistical model of active echo imaging"
+author: "W. Bauer"
+date: "04/16/2015"
+output: html_document
+---
+
+As with all these github notes, the following is provisional. It's a first step toward a statistical model of calibration, but is based on an understanding which is still, let's say, in development.
+
+### Setup
+
+The Universal UR5 robot arm advertises 0.1 mm repeatability. Assume this value represents standard deviation in quantities which depend on the arm's position.
+
+The first step in calibration is, for each of 28 poses, to estimate the position of the active echo (AE) in the image frame, i.e., the coordinate frame of the transducer array. Our interest here is a statistical model for AE position estimation for a single pose.
+
+The pose is first adjusted so that the AE is in the midplane of the image frame, i.e., so that its y coordinate, $p_y,$ is nominally zero. Distances, $r_1,\:r_2,\ldots,\:r_N$ between the AE and the $N$ transducer elements are measured via time of flight. Since all of these measurements depend on position of the robot arm, they are subject to errors which we will model as normally distributed with mean zero and standard deviation 0.1 mm.
+
+Given a putative position, $p = (p_z, p_x, p_y),$ of the AE in the image frame, let $d_1(p)\:,\ldots,\:d_N(p)$ be the computed distances between the $N$ transducer elements. I.e., if $t_{i,x}$ represents the x coordinate of the $i^{th}$ transducer, then$$d_i(p) = \sqrt{p_z^2 + (p_x-t_{i,x})^2 + p_y^2}\:\:i=1,\:\ldots\:,N.$$The corresponding conditional likelihood of the measurements given $p$ is thus,$$P(r_1,\:\ldots\:,r_N | p) = (2\pi\sigma^2)^{-N/2}e^{-\sum_{i=1}^N(r_i-d_i(p))^2/2\sigma^2},$$where $\sigma=0.1.$
+
+Assume that the AE will be positioned approximately within a small region of the midplane, such that any $p_x$ and $p_z$ in that region would be equally likely. Then, for $p_x$ and $p_z$ within the region,$$P(p) = \frac{1}{A}(2\pi\sigma^2)^{-1/2}e^{-p_y^2/2\sigma^2},$$where $A$ is the region's area. The total probability of a putative $p$ and the observed measurements is,$$P(r_1,\:\ldots\:,r_N | p)P(p) = \frac{1}{A}(2\pi\sigma^2)^{-(N+1)/2}e^{-p_y^2/2\sigma^2-\sum_{i=1}^N(r_i-d_i(p))^2/2\sigma^2}\:\:\left(equ. 1\right)$$
+
+A maximum likelihood method would would find a single point, $p^*,$ at which *equation 1* attains its maximum value. To do so, it would suffice to minimize the expression,$$p_y^2 + \sum_{i=1}^N(r_i-d_i(p))^2,$$which appears in the exponent, but which does not depend on $\sigma,$ the parameter which quantifies error. In contrast, a Bayesian method would attempt to determine the posterior distribution of $p$ given the observations, $r_1,\:\ldots\:,r_N,$ $$P(p | r_1,\:\ldots\:,r_N) = \frac{P(r_1,\:\ldots\:,r_N | p)P(p)}{P(r_1,\:\ldots\:,r_N)}\:\:\left(equ. 2\right),$$hence to include quantification of error.
+
+The denominator in equation 2 is a constant, but very difficult to determine in closed form since it is the integral of the numerator with respect to $p$. It is easy to compute the posterior only up to a constant of proportionality,$$P(p | r_1,\:\ldots\:,r_N) \propto e^{-p_y^2/2\sigma^2-\sum_{i=1}^N(r_i-d_i(p))^2/2\sigma^2}\:\:\left(equ. 3\right)$$Thus, we can easily compute the only the *ratio* of the posterior probabilities of any two values of $p.$ Such ratios, however, can be used to generate samples with the correct relative frequencies, thus to simulate draws from the posterior distribution.
+
+To create data for experimentation, suppose we have a 128 element transducer array with elements spaced at 0.25 mm intervals. Thus $t_{i, x} = 0.25i,\:\:i=1,\:\ldots\:,128.$ (Transducer z and y coordinates would be zero in the image frame.) Suppose the AE is crudely estimated to be somewhere in a 10 mm by 10 mm square centered at $x = 16 mm,\:z=20mm.$ We generate a random point, `p_actual`, with x and z coordinates in this square, and a y coordinate representing midplane error.
+
+NOTE: Since only the square of $p_y$ appears in the above formulation, it provides no way to distinguish between positive or negative values of $p_y.$ In what follows, we'll treat $p_y$ as positive for programming convenience. Though it is also true that only the square of $p_z$ appears, we know that the AE is in front of the transducer array, hence that $p_z \gt 0$.   
+
+```{r}
+set.seed(1429305885) # System time when the line was written.
+p_actual <- c(runif(1, 11, 21), runif(1, 15, 25), abs(rnorm(1, mean=0, sd=0.1)))
+p_actual
+```
+
+Distances between points and transducers must be computed frequently, so we write a function for the purpose.
+
+```{r}
+getDistances <- function(point){
+  sapply(0.25*(1:128), function(tx)sqrt(point[1]^2 + (point[2]-tx)^2 + point[3]^2))
+}
+```
+
+We'll apply this function to `p_actual` and add errors to form $r = (r_1,\:\ldots\:,r_128).$ These numbers will constitute our "data."
+
+```{r}
+r <- getDistances(p_actual) + rnorm(128, mean=0, sd=0.1)
+```
+
+Because the exponents on right side of *equation 3* can be large negative numbers, we'll write a function to compute only the exponent itself, i.e., the natural log of *equation 3.* We assume the argument, `point`, is within the specified square. 
+
+```{r}
+ln_prob <- function(point, r, sigma){
+  d <- getDistances(point)
+  -(point[3]^2 + sum((r-d)^2))/(2*sigma^2)
+  }
+```
+
+The function computes a log probability only up to an additive constant, but we'll abuse terminology and refer to it as a log probability.
+
+### MCMC
+
+The Metropolis-Hastings algorithm is a general purpose way to generate samples with correct relative frequencies, given only an expression such as *equation 3*. The algorithm does so by constructing a Markov chain whose stationary distribution is guaranteed to be the one desired. Because a stationary distribution is approached asymptotically, a "burn-in" period is required.
+
+The length of a burn-in period can be shortened by starting the algorithm at a point with relatively high probability. Otherwise, the algorithm must "climb" to such a point before it begins to generate samples with correct relative frequencies.
+
+In our case of intersecting circles it would be easy to solve for such a point. However, we'll employ a more general technique which is to generate 100 points at random and find the one with maximum log probability. This gives us a better than 99% chance of starting from a point in the 95$^{th}$ percentile, i.e., $1-.99^{100} \gt .95$
+
+```{r}
+n <- 100
+# Create n points at random
+temp <- cbind(runif(n, 11, 21), runif(n, 15, 25), abs(rnorm(n, mean=0, sd=0.1)))
+# For each, calculate log probability
+lls <- sapply(1:n, function(i)ln_prob(temp[i,], r, 0.1))
+# Find the index of the maximum log probability
+idx <- which.max(lls)
+# Find the associated point
+p_start <- temp[idx,]
+# Clean up
+rm(n, temp, lls, idx)
+rbind(p_actual=p_actual, p_start=p_start)
+```
+
+Our starting point is a fair approximation to the actual position. However, our objective is not to approximate, but to generate samples with correct relative frequencies. Given a point, `p`, we'll change it slightly to create another point, `q`, then choose `p` or `q` as our next sample, according to the ratio of their associated probabilities as prescribed by Metropolis-Hastings. This is the "accept-reject" procedure which is the heart of Metropolis-Hastings.
+
+```{r}
+accept_reject <- function(p, r, sigma){
+  # Create q by slight perturbations of p
+  q <- p + runif(3, -sigma*0.05, sigma*0.05)
+  # Be sure q is within allowable limits
+  q[1] <- max(11, min(q[1], 21))
+  q[2] <- max(15, min(q[2], 25))
+  q[3] <- max(0, q[3])
+  # Compute log probabilities
+  lpp <- ln_prob(p, r, sigma)
+  lpq <- ln_prob(q, r, sigma)
+  if(lpq > lpp){
+    # If q is more probable, accept it 
+    return(q)
+    } else {
+      # If q is less probable, accept it with probability
+      # equal to the ratio of its probability to p's.
+      if(log(runif(1)) < lpq-lpp){
+        return(q)
+        } else {
+          return(p)
+          }
+      }
+  }
+```
+
+Markov chain Monte Carlo just applies this function repeatedly, accumulating samples.
+
+```{r}
+generateSamples <- function(n, p_start, r, sigma){
+  samples <- p <- p_start
+  for(i in 2:n){
+    p <- accept_reject(p, r, sigma); 
+    samples <- cbind(samples, p)
+    }
+  samples
+}
+```
+
+We'll first generate 5000 samples, and use mean values to assess burn-in.
+
+```{r fig.align='center', fig.show='hold'}
+# Form the samples
+samples <- generateSamples(5000, p_start, r, 0.1)
+# Find means of adjacent 100-long stretches
+temp <- sapply(seq(1, 4900, by=100), function(i)rowMeans(samples[,i:(i+99)]))
+# Plot results, scaled for comparison
+matplot(seq(1, 4900, by=100), scale(t(temp)), type='l', lwd=3, lty=1, xlab="sample number", ylab="mean values, scaled for comparison", main="Sample means of disjoint 100-long windows")
+legend("topright", c(expression(p[z]), expression(p[x]), expression(p[y])), lwd=3, col=1:3)
+```
+
+Judging from the figure, burn-in occurs by sample number 1000. We'll retain only samples from 1001 through 5000.
+
+```{r}
+samples <- samples[,1001:5000]
+```
+
+
+Since samples are generated by a Markov process, successive samples will be correlated. It is common practice to "thin" the generated sequence until correlations are insignificant. We use autocorrelations of each component to judge how much the samples should be thinned. 
+
+```{r echo=FALSE, fig.align='center'}
+par(mfrow=c(1,3))
+pacf(samples[1,], main=expression(p[z]), lwd=3)
+pacf(samples[2,], main=expression(p[x]), lwd=3)
+pacf(samples[3,], main=expression(p[y]), lwd=3)
+par(mfrow=c(1,1))
+```
+
+Autocorrelations are essentially insignificant (within the broken, blue lines) by 4 sample delays. We thus thin to every 4th sample.
+
+```{r}
+samples <- samples[, seq(1, 4000, by=4)]
+```
+
+### Uses?
+
+In general, statistical models are useful because they intrinsically quantify uncertainty as well as optimal values. The figure shows that the actual AE location (green dot) is well within one standard deviation (red box) of the sample mean (red dot.) Hence, the sample mean could have been used to estimate AE location. Dispersion of samples about the mean indicates the range of possible error.
+
+```{r echo=FALSE, fig.show='hold', fig.align='center'}
+mns <- apply(samples, 1, mean)
+sds <- apply(samples, 1, sd)
+plot(samples[1,], samples[2,], xlim=c(18.1,18.25), ylim=c(23.4,23.56),
+     xlab=expression(p[z]), ylab=expression(p[x]), main="MCMC Samples")
+points(p_actual[1], p_actual[2], pch=19, col="green", cex=2)
+points(mns[1],mns[2], pch=19, col="red", cex=2)
+rect(mns[1]-sds[1], mns[2]-sds[2], mns[1] + sds[1], mns[2]+sds[2], lty=2, lwd=5, border="red")
+legend('topright', c("samples", "mean sample", "actual location"), pch=c(1, 19, 19), col=c("black", "red", "green"))
+```
+
+It would be convenient if the MCMC samples were to fit a convenient parametric form. The obvious candidate would have been a normal distribution. Unfortunately, a Shapiro-Wilk test rejects normality pretty soundly. For instance,
+
+```{r}
+shapiro.test(samples[1,])
+```
