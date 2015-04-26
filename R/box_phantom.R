@@ -1,4 +1,4 @@
-#' Returns a rectilinear phantom composed of silicon with two embedded spheres containing
+#' Returns a box (rectilinear) phantom composed of silicon with two embedded spheres containing
 #' alcohol and water, respectively. The phantom's left, front, bottom corner is the
 #' the origin of the local reference frame.
 #' @param dimensions --a 3-vector of width, depth, and height, the x, y, z dimensions respectively
@@ -6,8 +6,12 @@
 #' @param r_alcohol --the radius of the alcohol component
 #' @param ctr_water --a 3-vector specifying the center of the water component
 #' @param r_water --the radius of the water component
-makeRectilinearPhantom <- function(dimensions, 
-                                   ctr_alcohol, r_alcohol, ctr_water, r_water){
+newBoxPhantom <- function(dimensions, ctr_alcohol, r_alcohol, ctr_water, r_water){
+  ### Speed of sound
+  c_silicone <- 1000.0 # mm/msec
+  c_alcohol <- 1180.0 # mm/msec (ethyl alcohol)
+  c_water <- 1480.0 # mm/msec
+    
   ### Argument checks
   # Ensure all arguments are numeric
   for(a in list(dimensions, ctr_alcohol, r_alcohol, ctr_water, r_water)){
