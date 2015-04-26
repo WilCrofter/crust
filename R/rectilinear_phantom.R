@@ -28,17 +28,30 @@ makeRectilinearPhantom <- function(dimensions,
   if(min(ctr_water-r_water) < 0 |
        max(ctr_water-dimensions+r_water) > 0)stop("Water sphere is out of bounds.")
   
-  #' Given a point and a vector indicating direction, return a list of two
-  #' diametrically opposite points on the phantom's surface
-  opposingPoints <- function (point, direction){
+  # Is a given point within the phantom?
+  isContained <- function(point){
+    sum(point >= 0 & point <= dimensions) == length(point)
+  }
+  
+  # Given a point and a vector indicating direction, return a list of two
+  # diametrically opposite points on the phantom's surface
+  opposingPoints <- function(point, direction){
     if(!is.numeric(point) | !(length(point)==3))stop("point must be numeric of length 3")
     if(!is.numeric(direction) | !(length(direction)==3))stop("direction must be numeric of length 3")
     if(isTRUE(all.equal(direction,c(0,0,0))))stop("direction cannot be zero")
-    i1 <- which.max(point-(point/direction)*direction)
-    pt1 <- point - direction*point[i1]/direction[i1]
-    i2 <- which.min(point+direction*(dimension-point)/direction)
-    pt2 <- point + direction*(dimension[i2]-point[i2])/direction[i2]
-    list(pt1=pt1, pt2=pt2)
+    # Solve for multiples of direction which cross the faces
+    r0 <- -point/direction
+    r1 <- (dimensions - point)/direction
+    # Order them according to absolute value
+    r0 <- r0[order(abs(r0))]
+    r1 <- r1[order(abs(r1))]
+    # Check the associated points for containment
+    i0 <- sapply(r0, function(r)isContained(point + r*direction))
+    i1 <- sapply(r1, function(r)isContained(point + r*direction))
+    # Pick the first contained point
+    pt1 <- point + r0[i0][1]*direction
+    pt2 <- point + r1[i1][1]*direction
+    return(list(pt1, pt2))
   }
   
   ## Find the length of the intersection of a line segment with a sphere.
