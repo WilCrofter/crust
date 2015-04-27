@@ -1,0 +1,70 @@
+---
+title: "Using the box phantom"
+author: "W. Bauer"
+date: "04/26/2015"
+output: html_document
+---
+
+Since the UR5 robot involves rigid bodies and rigid body motion, an object-oriented simulator would seem to be the right approach. The R language offers 3 formal object-oriented systems, S3, S4, and Reference Classes, plus various informal possibilities such as using closures. We've decided to use an informal system for a first prototype. In R, functions and scopes are first class objects which can be manipulated like data. A function maintains a reference to the lexical scope, or environment, in which it was defined. That environment can contain both data and other functions, hence provides an easy, if not particularly elegant, representation of an object with fields (data) and methods (functions.)
+
+This note illustrates use of our first object, a simulated phantom consisting of a rectilinear silicone box with two embedded spheres, one of water, one of alcohol. File [box_phantom.R](../R/box_phantom.R) contains its source code. The source defines one global function, `newBoxPhantom`, which creates the object.
+
+```{r}
+source("../R/box_phantom.R")
+phantom <- newBoxPhantom(dimensions=c(64, 64, 64), 
+                         ctr_alcohol=c(16, 32-3, 36), r_alcohol=12, 
+                         ctr_water=c(48, 32+3, 24), r_water=10)
+```
+
+Function `newBoxPhantom` defines a number of functions and constants internally and returns a reference to the scope of those definitions, i.e., the environment in which they were defined. As long as that reference, named "phantom" in the code snippet above, persists, the constants and functions created within it persist as well. This can be seen by listing phantom's contents.
+
+```{r}
+ls(phantom)
+```
+
+One of the functions listed is `plotAxialSection`. We'll use this to plot axial (horizontal) sections from z=16 to z=46:
+
+```{r fig.align='center', fig.width=8}
+par(mfrow=c(2, 2))
+for(z in seq(16, 44, by=4)){
+  phantom$plotAxialSection(z)
+}
+par(mfrow=c(1,1))
+```
+
+We'll illustrate the use of two more functions, `opposingPoints` and `timeOfFlight`. The axial section at z=28 contains sections of both spheres. Using the first function we find two points on the boundary, such that a line between them intersects the centers of both spherical sections.
+
+```{r}
+# Center of the alcohol section
+ca <- phantom$ctr_alcohol
+ca[3] <- 28
+# Center of the water section
+cw <- phantom$ctr_water
+cw[3] <- 28
+# Find opposing points
+pts1 <- phantom$opposingPoints(ca, cw-ca)
+```
+
+Next we find opposing points which define a line segment parallel to the first, but shifted toward the front of the box enough to miss both the alcohol and the water.
+
+```{r}
+pts2 <- phantom$opposingPoints(ca-c(0,16,0), cw-ca)
+```
+
+The line segments defined by each pair of points are shown in the figure. (The code is suppressed.)
+
+```{r fig.show='hold', fig.align='center', echo=FALSE}
+phantom$plotAxialSection(28)
+segments(pts1[[1]][1], pts1[[1]][2], pts1[[2]][1], pts1[[2]][2], lwd=4, col="red")
+segments(pts2[[1]][1], pts2[[1]][2], pts2[[2]][1], pts2[[2]][2], lwd=4, col="green")
+```
+
+Finally, we find the time of flight for each pair:
+
+```{r}
+tof1 <- phantom$timeOfFlight(pts1[[1]], pts1[[2]])
+tof2 <- phantom$timeOfFlight(pts2[[1]], pts2[[2]])
+c(tof_red=tof1, tof_green=tof2)
+```
+
+Since sound travels faster in alcohol and water than in silicone, the green time of flight is longer. Assuming dimensions are in mm, times of flight are in msecs.
