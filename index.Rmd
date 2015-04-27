@@ -5,6 +5,7 @@ output: html_document
 
 #### Notes in reverse chronological order.
 
+* [Using the box phantom](www/using_box_phantom.html)
 * [Statistical model of active echo imaging](www/mcmc_ae.html)
 * [Radon transform and projection slice theorem](www/radon_slice.html)
 * [Distribution of transmit-receive paths through a pixel](www/distr_lines_thru_pixel.html)
