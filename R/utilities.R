@@ -84,3 +84,35 @@ ellipse <- function(r, M=matrix(c(1,0,0,1), 2, 2)){
   colnames(temp) <- c("x", "y")
   return(temp)
 }
+
+# Given an axis of rotation,u, and an angle, theta, return a 3x3 matrix
+# representing rotation about u by theta, assuming the right-hand rule.
+rotationMatrix <- function(u, theta){
+  normu <- sqrt(sum(u^2))
+  if(isTRUE(all.equal(normu, 0)))stop("axis of rotation cannot be zero")
+  u <- u/normu
+  N <- matrix(c(0, u[3], -u[2], -u[3], 0, u[1], u[2], -u[1], 0), 3, 3)
+  diag(1, 3, 3) + sin(theta)*N + (1-cos(theta))*(N %*% N)
+}
+
+# Cross product uXv
+crossProduct <- function(u, v){
+  if(!is.numeric(u) | !is.numeric(v) | length(u) != 3 | length(v) != 3)
+    stop("u and v must be numeric 3-vectors")
+  u[c(2,3,1)]*v[c(3,1,2)] - u[c(3,1,2)]*v[c(2,3,1)]
+}
+
+# Return the rotation matrix which rotates u into the direction of v
+# about the axis uXv.
+rotateU2V <- function(u, v){
+  if(!is.numeric(u) | !is.numeric(v) | length(u) != 3 | length(v) != 3)
+    stop("u and v must be numeric 3-vectors")
+  normu <- sqrt(sum(u^2))
+  normv <- sqrt(sum(v^2))
+  if(isTRUE(all.equal(normu, 0)))stop("u must be nonzero")
+  if(isTRUE(all.equal(normv, 0)))stop("v must be nonzero")
+  u <- u/normu
+  v <- v/normv
+  theta <- acos(sum(u*v))
+  rotationMatrix(crossProduct(u,v), theta)
+}
