@@ -130,6 +130,9 @@ newBoxPhantom <- function(dimensions, ctr_alcohol, r_alcohol, ctr_water, r_water
     (l_total-l_alcohol-l_water)/c_silicone + l_alcohol/c_alcohol + l_water/c_water 
   }
 
-  # Return a reference to the current environment
-  environment(timeOfFlight)
+  # Return a reference to the current environment after adding
+  # "rigid body" and "box phantom" class attributes
+  e <- environment(timeOfFlight)
+  class(e) <- c("box phantom", "rigid body", class(e))
+  e
 }

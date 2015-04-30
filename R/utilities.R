@@ -85,7 +85,7 @@ ellipse <- function(r, M=matrix(c(1,0,0,1), 2, 2)){
   return(temp)
 }
 
-# Given an axis of rotation,u, and an angle, theta, return a 3x3 matrix
+# Given an axis of rotation, u, and an angle, theta, return a 3x3 matrix
 # representing rotation about u by theta, assuming the right-hand rule.
 rotationMatrix <- function(u, theta){
   normu <- sqrt(sum(u^2))
@@ -94,6 +94,16 @@ rotationMatrix <- function(u, theta){
   N <- matrix(c(0, u[3], -u[2], -u[3], 0, u[1], u[2], -u[1], 0), 3, 3)
   diag(1, 3, 3) + sin(theta)*N + (1-cos(theta))*(N %*% N)
 }
+
+# Return an affine transform (member of SE(3)) defined by an axis, u,
+# an angle of rotation, theta, and a translation.
+affineTransform <- function(u, theta, translation){
+  ans <- diag(1, 4, 4)
+  ans[1:3, 1:3] <- rotationMatrix(u, theta)
+  ans[1:3, 4] <- translation
+  ans
+}
+
 
 # Cross product uXv
 crossProduct <- function(u, v){
