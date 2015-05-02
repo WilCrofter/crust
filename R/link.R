@@ -10,6 +10,9 @@ newLink <- function(base_object, relative_object, base2relative){
   }
   if(!is(base_object, "rigid body"))stop("Base object is not a rigid body")
   if(!is(relative_object, "rigid body"))stop("Relative object is not a rigid body")
+  if(identical(relative_object, base_object))stop("Base and relative objects cannot be identical.")
+  
+  # Inverse transform of base2relative
   relative2base <- diag(1, 4, 4)
   relative2base[1:3,1:3] <- t(base2relative[1:3, 1:3])
   relative2base[1:3,4] <- -relative2base[1:3,1:3] %*% base2relative[1:3, 4]

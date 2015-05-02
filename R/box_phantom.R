@@ -35,6 +35,30 @@ newBoxPhantom <- function(dimensions, ctr_alcohol, r_alcohol, ctr_water, r_water
   # Ensure that the spheres don't overlap
   if(r_alcohol+r_water > sqrt(sum((ctr_alcohol-ctr_water)^2)))stop("Water and alcohol spheres overlap.")
 
+  # Links to other bodies
+  links <- list()
+  
+  addLink <- function(link){
+    if(!is(link, "link")){
+      warning("Argument to addLink is not a link. It will not be added.")
+      return(FALSE)
+    } else {
+      links <- c(links, link)
+      return(TRUE)
+    }
+  }
+  
+  removeLink <- function(link){
+    if(!is(link, "link")){
+      warning("Argument to removeLink is not a link. Attempted removal failed.")
+      return(FALSE)
+    } else {
+      idx <- sapply(links, function(x)identical(x,link))
+      links <- links[!idx]
+      return(TRUE)
+    }
+  }
+  
   # Is a given point within the phantom?
   isContained <- function(point){
     sum(point >= 0 & point <= dimensions) == length(point)
