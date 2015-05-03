@@ -104,6 +104,26 @@ affineTransform <- function(u, theta, translation){
   ans
 }
 
+# Return TRUE if and only if the argument is an affine transform
+isAffine <- function(transform){
+  if(!is.numeric(transform))return(FALSE)
+  if(!is.matrix(transform))return(FALSE)
+  if(!isTRUE(all.equal(dim(transform), c(4,4))))return(FALSE)
+  if(!isTRUE(all.equal(transform[1:3,1:3] %*% t(transform[1:3, 1:3]), diag(1,3,3))))return(FALSE)
+  if(!isTRUE(all.equal(transform[4,1:4], c(0,0,0,1))))return(FALSE)
+  TRUE
+}
+
+# Return the inverse an affine transform
+invAffine <- function(transform){
+  if(!isAffine(transform))stop("Attempt to take affine inverse of non-affine transform.")
+  # Inverse transform of base2relative
+  inv <- diag(1, 4, 4)
+  inv[1:3,1:3] <- t(transform[1:3, 1:3])
+  inv[1:3,4] <- -inv[1:3,1:3] %*% transform[1:3, 4]
+  inv
+}
+
 
 # Cross product uXv
 crossProduct <- function(u, v){

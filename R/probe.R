@@ -1,59 +1,55 @@
 #' Creates a probe of n transducers equally spaced along the x axis
-#' in the local reference frame. 
-newProbe <- function(n, spacing){
+#' in the local reference frame, and at a physical position and
+#' orientation given by frame_in_world. 
+newProbe <- function(n, spacing, position_and_orientation){
   n <- as.integer(round(n))
   if(length(n) != 1)stop("n must be an integer")
   if(!is.numeric(spacing) | length(spacing) != 1)stop("spacing must be a real number")
+  if(!isAffine(position_and_orientation))stop("position and orientation in world is not an affine transform")
   
-  recievers <- spacing*seq(1, n, by=1)
+  receivers <- spacing*seq(1, n, by=1)
   transmitters <- spacing*seq(1.5, n-.5, by=1)
-  links <- list()
   
-  addLink <- function(link){
-    this <- environment(addLink)
-    if(!is(link, "link") | 
-         (!identical(link$base_object, this) & 
-            !identical(link$relative_object, this))){
-      warning("Argument to addLink is not a link with this object. It will not be added.")
-      return(FALSE)
+  # Change the real position and orientation of this object in the physical world.
+  # CAUTION: relative positions as they appear in links will not be affected.
+  moveTo <- function(transform){
+    if(!isAffine(transform))stop("Argument is not an affine transform")
+    this <- environment(moveTo)
+    this$position_and_orientation <- transform
+    invisible()
+  }
+  
+  # Adjust the real position and orientation of this object in the physical world.
+  # I.e., left multiply its current position and orientation by the give transform.
+  # CAUTION: relative positions as they appear in links will not be affected.
+  adjustBy <- function(transform){
+    if(!isAffine(transform))stop("Argument is not an affine transform")
+    this <- environment(adjustBy)
+    this$position_and_orientation <- transform %*% this$position_and_orientation
+    invisible()
+  }
+  
+  # Convert a 3-vector OR an affine transform from local coordinates
+  # to world coordinates.
+  local2world <- function(u){
+    if(isAffine(u)){
+      return(invAffine(position_in_world) %*% u)
+    } else if(is.numeric(u) & length(u) == 3){
+      return(as.vector(invAffine(position_in_world) %*% c(u,1))[1:3])
     } else {
-      links <- c(links, link)
-      return(TRUE)
+      stop("Argument is neither a 3-vector nor an affine transform.")
     }
   }
   
-  removeLink <- function(link){
-    if(!is(link, "link")){
-      warning("Argument to removeLink is not a link. Attempted removal failed.")
-      return(FALSE)
+  # Convert a 3-vector OR an affine transform from world coordinates
+  # to local coordinates.
+  world2local <- function(u){
+    if(isAffine(u)){
+      return(position_in_world %*% u)
+    } else if(is.numeric(u) & length(u) == 3){
+      return(as.vector(position_in_world %*% c(u,1))[1:3])
     } else {
-      idx <- sapply(links, function(x)identical(x,link))
-      links <- links[!idx]
-      return(TRUE)
-    }
-  }
-  
-  # Apply the given affine transform to the local reference frame.
-  # In practice this means applying it to every link which connects
-  # this body to another, thus changing its relative position with
-  # respect to the other bodies.
-  transformOrigin <- function(transform){
-    this <- environment(transformOrigin)
-    # Inverse of the given transform
-    inv <- diag(1, 4, 4)
-    inv[1:3,1:3] <- t(transform[1:3, 1:3])
-    inv[1:3,4] <- -inv[1:3,1:3] %*% transform[1:3, 4]
-    
-    for(link in links){
-      if(identical(link$base_object), this){
-        # This body is the base object hence
-        link$base2relative <- transform %*% b2r
-        link$relative2base <- link$relative2base %*% inv
-      } else if(identical(link$relative_object), this){
-        # This body is the relative object, hence
-        link$base2relative <- inv %*% link$base2relative
-        link$relative2base <- link$relative2base %*% transform
-      }
+      stop("Argument is neither a 3-vector nor an affine transform.")
     }
   }
   

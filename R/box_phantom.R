@@ -6,7 +6,8 @@
 #' @param r_alcohol --the radius of the alcohol component
 #' @param ctr_water --a 3-vector specifying the center of the water component
 #' @param r_water --the radius of the water component
-newBoxPhantom <- function(dimensions, ctr_alcohol, r_alcohol, ctr_water, r_water){
+newBoxPhantom <- function(dimensions, ctr_alcohol, r_alcohol, ctr_water, r_water,
+                          frame_in_world=diag(1, 4, 4)){
   ### Speed of sound
   c_silicone <- 1000.0 # mm/msec
   c_alcohol <- 1180.0 # mm/msec (ethyl alcohol)
@@ -34,30 +35,6 @@ newBoxPhantom <- function(dimensions, ctr_alcohol, r_alcohol, ctr_water, r_water
        max(ctr_water-dimensions+r_water) > 0)stop("Water sphere is out of bounds.")
   # Ensure that the spheres don't overlap
   if(r_alcohol+r_water > sqrt(sum((ctr_alcohol-ctr_water)^2)))stop("Water and alcohol spheres overlap.")
-
-  # Links to other bodies
-  links <- list()
-  
-  addLink <- function(link){
-    if(!is(link, "link")){
-      warning("Argument to addLink is not a link. It will not be added.")
-      return(FALSE)
-    } else {
-      links <- c(links, link)
-      return(TRUE)
-    }
-  }
-  
-  removeLink <- function(link){
-    if(!is(link, "link")){
-      warning("Argument to removeLink is not a link. Attempted removal failed.")
-      return(FALSE)
-    } else {
-      idx <- sapply(links, function(x)identical(x,link))
-      links <- links[!idx]
-      return(TRUE)
-    }
-  }
   
   # Is a given point within the phantom?
   isContained <- function(point){
