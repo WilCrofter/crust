@@ -53,6 +53,7 @@ newProbe <- function(n, spacing, alignment_in_world){
     }
   }
   
+  
   # Return a reference to the current environment after adding
   # "rigid body" and "box phantom" class attributes
   e <- environment(world2local)

@@ -26,7 +26,7 @@ phantom <- newBoxPhantom(dimensions=c(30, 30, 30),
 
 I've given the phantom the identity alignment in the world. This means its internal reference frame (coordinate system) is the same as that of the world. The next task is to create and align the probes. I'll begin with an axial section through the midpoint of the phantom as pictured.
 
-```{r}
+```{r fig.align='center', fig.width=8}
 phantom$plotAxialSection(15)
 ```
 
@@ -54,33 +54,47 @@ The next step is to create probes centered at these two positions. Transducers a
 For the probe at world coordinate $(30, 15, 15)$ this orientation can be arranged by first rotating $-\pi/2$ about the world's y axis, then rotating $\pi/2$ about the world's x axis, and finally translating to world coordinate $(30, 15, 15)$.
 
 ```{r}
-M <- affineTransform(c(0,1,0), -pi/2, c(0,0,0))       # rotate -pi/2 about world y
-M <- affineTransform(c(1,0,0), pi/2, c(0,0,0)) %*% M # rotate pi/2 about world x
-M <- affineTransform(c(0,0,0), 0, c(30, 15, 15)) %*% M # translate to world (30, 15, 15)
-xmitr <- newProbe(n=64, spacing=60/128, alignment_in_world=M)
+t1 <- affineTransform(c(0,1,0), -pi/2, c(0,0,0))       # rotate -pi/2 about world y
+t1 <- affineTransform(c(1,0,0), pi/2, c(0,0,0)) %*% t1 # rotate pi/2 about world x
+t1 <- affineTransform(c(0,0,0), 0, c(30, 15, 15)) %*% t1 # translate to world (30, 15, 15)
+xmitr <- newProbe(n=64, spacing=60/128, alignment_in_world=t1)
 ```
 
 The orientation of the second probe is opposite to the first along the world's x axis, hence may be obtained from the first by a rotation of $\pi$ around the world's z axis.
 
 ```{r}
-P <- affineTransform(c(0,1,0), -pi/2, c(0,0,0))       # rotate -pi/2 about world y
-P <- affineTransform(c(1,0,0), pi/2, c(0,0,0)) %*% P # rotate pi/2 about world x
-P <- affineTransform(c(0,0,1), pi, c(0, 0, 0)) %*% P # rotate pi about world z
-P <- affineTransform(c(0,0,0), 0, c(0, 15, 15)) %*% P # translate to world (0, 15, 15)
-rcvr <- newProbe(n=64, spacing=60/128, alignment_in_world=P)
+t2 <- affineTransform(c(0,1,0), -pi/2, c(0,0,0))       # rotate -pi/2 about world y
+t2 <- affineTransform(c(1,0,0), pi/2, c(0,0,0)) %*% t2 # rotate pi/2 about world x
+t2 <- affineTransform(c(0,0,1), pi, c(0, 0, 0)) %*% t2 # rotate pi about world z
+t2 <- affineTransform(c(0,0,0), 0, c(0, 15, 15)) %*% t2 # translate to world (0, 15, 15)
+rcvr <- newProbe(n=64, spacing=60/128, alignment_in_world=t2)
 ```
 
-The phantom can calculate time of flight between two points on its boundary. However it must know the coordinates of those points in its internal reference frame. In general, then, we must convert the coordinates of transducer arrays from probe to phantom coordinates.
+The phantom can calculate time of flight between two points on its boundary. However it must be given the coordinates of those points in its own internal reference frame. In general, then, we must convert the coordinates of transducer arrays from probe to phantom coordinates.
+
+Virtual probes store only the x coordinates of transducers since, in their internal reference frames, the y and z coordinates are zero. Appending the zeros and applying each probe's `local2world` function will produce the corresponding world coordinates in the form of 3xn matrices. 
 
 ```{r}
 transmitters <- sapply(xmitr$transmitters, function(x)xmitr$local2world(c(x, 0, 0)))
+receivers <- sapply(rcvr$receivers, function(x)rcvr$local2world(c(x, 0, 0)))
 ```
 
+In general these world coordinates must be converted to phantom coordinates. In this particular case conversion won't change anything.
 
+```{r}
+transmitters <- sapply(1:(ncol(transmitters)), function(k){phantom$world2local(as.vector(transmitters[,k]))})
+receivers <- sapply(1:(ncol(receivers)), function(k){phantom$world2local(as.vector(receivers[,k]))})
+```
 
+As a check, I'll superimpose the positions of every 4th transmitter and receiver on a plot of the axial section of interest.
 
-```{r echo=FALSE, fig.align='center', fig.show='hold'}
-plotAxialSection(15)
-
+```{r fig.align='center', fig.show='hold', fig.width=8}
+phantom$plotAxialSection(15)
+idx <- seq(1, 63, by=4)
+points(transmitters[1,idx], transmitters[2,idx], pch=19, col="blue")
+text(transmitters[1,idx], transmitters[2,idx], labels=as.character(idx), pos=4, col="blue" )
+points(receivers[1,idx], receivers[2,idx], pch=19, col="red")
+text(receivers[1,idx], receivers[2,idx], labels=as.character(idx), pos=2, col="red" )
+legend("topright", c("transmitter", "receiver"), pch=19, col=c("blue", "red"))
 ```
 
