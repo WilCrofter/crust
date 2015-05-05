@@ -84,3 +84,69 @@ ellipse <- function(r, M=matrix(c(1,0,0,1), 2, 2)){
   colnames(temp) <- c("x", "y")
   return(temp)
 }
+
+# Given an axis of rotation, u, and an angle, theta, return a 3x3 matrix
+# representing rotation about u by theta, assuming the right-hand rule.
+rotationMatrix <- function(u, theta){
+  if(!is.numeric(u) | !is.vector(u) | 
+       length(u) != 3)stop("axis of rotation must be a 3-vector")
+  if(!is.numeric(theta) | length(theta) != 1)stop("theta must be a number")
+  normu <- sqrt(sum(u^2))
+  if(!isTRUE(all.equal(theta,0)) & 
+       isTRUE(all.equal(normu, 0)))stop("axis of rotation cannot be zero unless theta is zero")
+  if(normu > 0) u <- u/normu
+  N <- matrix(c(0, u[3], -u[2], -u[3], 0, u[1], u[2], -u[1], 0), 3, 3)
+  diag(1, 3, 3) + sin(theta)*N + (1-cos(theta))*(N %*% N)
+}
+
+# Return an affine transform (member of SE(3)) defined by an axis, u,
+# an angle of rotation, theta, and a translation.
+affineTransform <- function(u, theta, translation){
+  ans <- diag(1, 4, 4)
+  ans[1:3, 1:3] <- rotationMatrix(u, theta)
+  ans[1:3, 4] <- translation
+  ans
+}
+
+# Return TRUE if and only if the argument is an affine transform
+isAffine <- function(transform){
+  if(!is.numeric(transform))return(FALSE)
+  if(!is.matrix(transform))return(FALSE)
+  if(!isTRUE(all.equal(dim(transform), c(4,4))))return(FALSE)
+  if(!isTRUE(all.equal(transform[1:3,1:3] %*% t(transform[1:3, 1:3]), diag(1,3,3))))return(FALSE)
+  if(!isTRUE(all.equal(transform[4,1:4], c(0,0,0,1))))return(FALSE)
+  TRUE
+}
+
+# Return the inverse an affine transform
+invAffine <- function(transform){
+  if(!isAffine(transform))stop("Attempt to take affine inverse of non-affine transform.")
+  # Inverse transform of base2relative
+  inv <- diag(1, 4, 4)
+  inv[1:3,1:3] <- t(transform[1:3, 1:3])
+  inv[1:3,4] <- -inv[1:3,1:3] %*% transform[1:3, 4]
+  inv
+}
+
+
+# Cross product uXv
+crossProduct <- function(u, v){
+  if(!is.numeric(u) | !is.numeric(v) | length(u) != 3 | length(v) != 3)
+    stop("u and v must be numeric 3-vectors")
+  u[c(2,3,1)]*v[c(3,1,2)] - u[c(3,1,2)]*v[c(2,3,1)]
+}
+
+# Return the rotation matrix which rotates u into the direction of v
+# about the axis uXv.
+rotateU2V <- function(u, v){
+  if(!is.numeric(u) | !is.numeric(v) | length(u) != 3 | length(v) != 3)
+    stop("u and v must be numeric 3-vectors")
+  normu <- sqrt(sum(u^2))
+  normv <- sqrt(sum(v^2))
+  if(isTRUE(all.equal(normu, 0)))stop("u must be nonzero")
+  if(isTRUE(all.equal(normv, 0)))stop("v must be nonzero")
+  u <- u/normu
+  v <- v/normv
+  theta <- acos(sum(u*v))
+  rotationMatrix(crossProduct(u,v), theta)
+}

@@ -6,7 +6,8 @@
 #' @param r_alcohol --the radius of the alcohol component
 #' @param ctr_water --a 3-vector specifying the center of the water component
 #' @param r_water --the radius of the water component
-newBoxPhantom <- function(dimensions, ctr_alcohol, r_alcohol, ctr_water, r_water){
+newBoxPhantom <- function(dimensions, ctr_alcohol, r_alcohol, ctr_water, r_water,
+                          alignment_in_world=diag(1, 4, 4)){
   ### Speed of sound
   c_silicone <- 1000.0 # mm/msec
   c_alcohol <- 1180.0 # mm/msec (ethyl alcohol)
@@ -35,9 +36,36 @@ newBoxPhantom <- function(dimensions, ctr_alcohol, r_alcohol, ctr_water, r_water
   # Ensure that the spheres don't overlap
   if(r_alcohol+r_water > sqrt(sum((ctr_alcohol-ctr_water)^2)))stop("Water and alcohol spheres overlap.")
 
-  # Is a given point within the phantom?
-  isContained <- function(point){
-    sum(point >= 0 & point <= dimensions) == length(point)
+  # Convert a 3-vector OR an affine transform from world coordinates
+  # to local coordinates.
+  world2local <- function(u){
+    if(isAffine(u)){
+      return(invAffine(alignment_in_world) %*% u)
+    } else if(is.numeric(u) & length(u) == 3){
+      return(as.vector(invAffine(alignment_in_world) %*% c(u,1))[1:3])
+    } else {
+      stop("Argument is neither a 3-vector nor an affine transform.")
+    }
+  }
+  
+  # Convert a 3-vector OR an affine transform from local coordinates
+  # to world coordinates.
+  local2world <- function(u){
+    if(isAffine(u)){
+      return(alignment_in_world %*% u)
+    } else if(is.numeric(u) & length(u) == 3){
+      return(as.vector(alignment_in_world %*% c(u,1))[1:3])
+    } else {
+      stop("Argument is neither a 3-vector nor an affine transform.")
+    }
+  }
+  
+  # Within tolerance, is a given point inside or on the boundary of the phantom?
+  isContained <- function(u){
+    sum(sapply(1:3, function(k){
+      (isTRUE(all.equal(u[k],0)) | u[k] > 0) & 
+        (isTRUE(all.equal(u[k], dimensions[k])) | u[k] < dimensions[k])
+    })) == 3
   }
   
   # Given a point and a vector indicating direction, return a list of two
@@ -130,6 +158,9 @@ newBoxPhantom <- function(dimensions, ctr_alcohol, r_alcohol, ctr_water, r_water
     (l_total-l_alcohol-l_water)/c_silicone + l_alcohol/c_alcohol + l_water/c_water 
   }
 
-  # Return a reference to the current environment
-  environment(timeOfFlight)
+  # Return a reference to the current environment after adding
+  # "rigid body" and "box phantom" class attributes
+  e <- environment(timeOfFlight)
+  class(e) <- c("box phantom", "rigid body", class(e))
+  e
 }

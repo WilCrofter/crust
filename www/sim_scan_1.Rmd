@@ -1,0 +1,120 @@
+---
+title: "Scanning a simulated phantom"
+author: "W. Bauer"
+date: "05/03/2015"
+output: html_document
+---
+
+This is a manual test of virtual phantom and probes. The objective is to simulate a contralateral ultrasound scan of the phantom and to visually display the resulting time of flight data. Such data consists of time of flight from transmitter $i$ to receiver $j$. Structured as a matrix, it can be displayed graphically as a 2D grid in which color codes time of flight.
+
+```{r}
+source("../R/utilities.R")
+source("../R/box_phantom.R")
+source("../R/probe.R")
+```
+
+In the scheme of this simulation software, virtual rigid bodies have positions and orientations in the "real world." Ultimately, they should have calibrated positions and orientations which may differ from real but upon which image recovery will be based. (See [link.R](../R/link.R).) Here, however, only real positions and orientations are used.
+
+For this manual test, the first requirement is to align probes contralaterally on a virtual phantom. Since this is a test, mainly to get a feel for how best to automate the process, I'll use probes with 64 rather than 128 elements. I'll assume transducer spacing of 60/128 mm, which should be approximately the same as the 60 mm, 128 element Ultrasonix probes used in the laboratory. For simplicity, I'll make the phantom's axial cross section 30mm by 30mm, the same size as the probe.
+
+```{r}
+phantom <- newBoxPhantom(dimensions=c(30, 30, 30), 
+                         ctr_alcohol=c(8, 15-1.5, 18), r_alcohol=6, 
+                         ctr_water=c(24, 16+1.5, 12), r_water=5,
+                         alignment_in_world = diag(1,4,4))
+```
+
+I've given the phantom the identity alignment in the world. This means its internal reference frame (coordinate system) is the same as that of the world. The next task is to create and align the probes. I'll begin with an axial section through the midpoint of the phantom as pictured.
+
+```{r fig.align='center', fig.width=8}
+phantom$plotAxialSection(15)
+```
+
+In this case it is obvious that the probes should be centered at x=0, y=15, z=15, and x=30, y=15, z=15, in phantom coordinates, which are the same as world coordinates in this case. However, since I want to outline what might be necessary in the general case, I'm going to treat the situation as if it weren't obvious.
+
+Since I want an axial section through the phantom's center, I'll ask the phantom for two points on its boundary which lie on a line through its center parallel to the x axis. The phantom will assume these specifications are in its internal coordinate system and return points in the same.
+
+```{r}
+centers <- phantom$opposingPoints(c(15,15,15), c(1,0,0))
+centers
+```
+
+The centers returned are those expected. They are given with respect to the phantom's internal reference frame which happens to be the same as the world's, but in general I would convert to world coordinates as follows.
+
+```{r}
+centers[[1]] <- phantom$local2world(centers[[1]])
+centers[[2]] <- phantom$local2world(centers[[2]])
+centers
+```
+
+The points are unchanged as expected in this case.
+
+The next step is to create probes centered at these two positions. Transducers are arrayed along a probe's internal x axis and transmit or receive along its internal z axis. Thus, a probe's x axis must be aligned with the world's y axis and its z axis aligned with the world's x axis, pointing toward the phantom.
+
+For the probe at world coordinate $(30, 15, 15)$ this orientation can be arranged by first rotating $-\pi/2$ about the world's y axis, then rotating $\pi/2$ about the world's x axis, and finally translating to world coordinate $(30, 15, 15)$.
+
+```{r}
+t1 <- affineTransform(c(0,1,0), -pi/2, c(0,0,0))       # rotate -pi/2 about world y
+t1 <- affineTransform(c(1,0,0), pi/2, c(0,0,0)) %*% t1 # rotate pi/2 about world x
+t1 <- affineTransform(c(0,0,0), 0, c(30, 15, 15)) %*% t1 # translate to world (30, 15, 15)
+xmitr <- newProbe(n=64, spacing=60/128, alignment_in_world=t1)
+```
+
+The orientation of the second probe is opposite to the first along the world's x axis, hence may be obtained from the first by a rotation of $\pi$ around the world's z axis.
+
+```{r}
+t2 <- affineTransform(c(0,1,0), -pi/2, c(0,0,0))       # rotate -pi/2 about world y
+t2 <- affineTransform(c(1,0,0), pi/2, c(0,0,0)) %*% t2 # rotate pi/2 about world x
+t2 <- affineTransform(c(0,0,1), pi, c(0, 0, 0)) %*% t2 # rotate pi about world z
+t2 <- affineTransform(c(0,0,0), 0, c(0, 15, 15)) %*% t2 # translate to world (0, 15, 15)
+rcvr <- newProbe(n=64, spacing=60/128, alignment_in_world=t2)
+```
+
+The phantom can calculate time of flight between two points on its boundary. However it must be given the coordinates of those points in its own internal reference frame. In general, then, we must convert the coordinates of transducer arrays from probe to phantom coordinates.
+
+Virtual probes store only the x coordinates of transducers since, in their internal reference frames, the y and z coordinates are zero. Appending the zeros and applying each probe's `local2world` function will produce the corresponding world coordinates in the form of 3xn matrices. 
+
+```{r}
+transmitters <- sapply(xmitr$transmitters, function(x)xmitr$local2world(c(x, 0, 0)))
+receivers <- sapply(rcvr$receivers, function(x)rcvr$local2world(c(x, 0, 0)))
+```
+
+In general these world coordinates must be converted to phantom coordinates. In this particular case conversion won't change anything.
+
+```{r}
+transmitters <- sapply(1:(ncol(transmitters)), function(k){phantom$world2local(as.vector(transmitters[,k]))})
+receivers <- sapply(1:(ncol(receivers)), function(k){phantom$world2local(as.vector(receivers[,k]))})
+```
+
+As a check, I'll superimpose the positions of every 4th transmitter and receiver on a plot of the axial section of interest.
+
+```{r fig.align='center', fig.show='hold', fig.width=8}
+phantom$plotAxialSection(15)
+idx <- seq(1, 63, by=4)
+points(transmitters[1,idx], transmitters[2,idx], pch=19, col="blue")
+text(transmitters[1,idx], transmitters[2,idx], labels=as.character(idx), pos=4, col="blue" )
+points(receivers[1,idx], receivers[2,idx], pch=19, col="red")
+text(receivers[1,idx], receivers[2,idx], labels=as.character(idx), pos=2, col="red" )
+legend("topright", c("transmitter", "receiver"), pch=19, col=c("blue", "red"))
+```
+
+Since probe positions appear to be correct, I should be able to simulate a scan. This is a matter of calculating times of flight from every transmitter to every receiver. For clarity, I'll use `for` loops rather than a nominally (but not always actually) more efficient functional programming construct like `sapply`.
+
+```{r}
+scan <- matrix(0, ncol(transmitters), ncol(receivers))
+for(i in 1:ncol(transmitters)){
+  for(j in 1:ncol(receivers)){
+    scan[i,j] <- phantom$timeOfFlight(as.vector(transmitters[,i]), as.vector(receivers[,j]))
+  }
+}
+```
+
+The result, a partial Radon transform, can be visualized as a false color image. Note that the shortest paths are from transmitter 1 to receiver 64, and from transmitter 63 to receiver 1. Thus the pixels (1, 64) and (63, 1) have colors corresponding to relatively short times of flight, approximately 0.03 msec. As paths begin to encounter the spheres, for instance, around pixel (18, 24), times of flight become shorter. 
+
+```{r fig.align='center', fig.show='hold', fig.width=7.5}
+image(1:ncol(transmitters), 1:ncol(receivers), scan, asp=1, col=rainbow(100), xlab="Transmitter i", ylab="Receiver j", main="Time of flight vs path i,j")
+temp <- round(seq(min(scan), max(scan), length.out = 10), 4)
+legend('topright', as.character(temp), fill=rainbow(10), title="ToF (msec)")
+```
+
+I'd conjecture that time of flight displays, as above, would be generally useful. However, I'd like to automate the above process before experimenting further.
