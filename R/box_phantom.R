@@ -60,9 +60,12 @@ newBoxPhantom <- function(dimensions, ctr_alcohol, r_alcohol, ctr_water, r_water
     }
   }
   
-  # Is a given point within the phantom?
-  isContained <- function(point){
-    sum(point >= 0 & point <= dimensions) == length(point)
+  # Within tolerance, is a given point inside or on the boundary of the phantom?
+  isContained <- function(u){
+    sum(sapply(1:3, function(k){
+      (isTRUE(all.equal(u[k],0)) | u[k] > 0) & 
+        (isTRUE(all.equal(u[k], dimensions[k])) | u[k] < dimensions[k])
+    })) == 3
   }
   
   # Given a point and a vector indicating direction, return a list of two

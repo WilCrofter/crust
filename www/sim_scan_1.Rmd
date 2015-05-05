@@ -5,7 +5,7 @@ date: "05/03/2015"
 output: html_document
 ---
 
-This is a manual test of virtual phantom and probes. The objective is to simulate a contralateral ultrasound scan of the phantom and to display the resulting time of flight data as a heat map. Such data consists of time of flight from transmitter $i$ to receiver $j$. Structured as a matrix, it can be displayed graphically as a 2D grid in which color codes time of flight.
+This is a manual test of virtual phantom and probes. The objective is to simulate a contralateral ultrasound scan of the phantom and to visually display the resulting time of flight data. Such data consists of time of flight from transmitter $i$ to receiver $j$. Structured as a matrix, it can be displayed graphically as a 2D grid in which color codes time of flight.
 
 ```{r}
 source("../R/utilities.R")
@@ -98,3 +98,23 @@ text(receivers[1,idx], receivers[2,idx], labels=as.character(idx), pos=2, col="r
 legend("topright", c("transmitter", "receiver"), pch=19, col=c("blue", "red"))
 ```
 
+Since probe positions appear to be correct, I should be able to simulate a scan. This is a matter of calculating times of flight from every transmitter to every receiver. For clarity, I'll use `for` loops rather than a nominally (but not always actually) more efficient functional programming construct like `sapply`.
+
+```{r}
+scan <- matrix(0, ncol(transmitters), ncol(receivers))
+for(i in 1:ncol(transmitters)){
+  for(j in 1:ncol(receivers)){
+    scan[i,j] <- phantom$timeOfFlight(as.vector(transmitters[,i]), as.vector(receivers[,j]))
+  }
+}
+```
+
+The result, a partial Radon transform, can be visualized as a false color image. Note that the shortest paths are from transmitter 1 to receiver 64, and from transmitter 63 to receiver 1. Thus the pixels (1, 64) and (63, 1) have colors corresponding to relatively short times of flight, approximately 0.03 msec. As paths begin to encounter the spheres, for instance, around pixel (18, 24), times of flight become shorter. 
+
+```{r fig.align='center', fig.show='hold', fig.width=7.5}
+image(1:ncol(transmitters), 1:ncol(receivers), scan, asp=1, col=rainbow(100), xlab="Transmitter i", ylab="Receiver j", main="Time of flight vs path i,j")
+temp <- round(seq(min(scan), max(scan), length.out = 10), 4)
+legend('topright', as.character(temp), fill=rainbow(10), title="ToF (msec)")
+```
+
+I'd conjecture that time of flight displays, as above, would be generally useful. However, I'd like to automate the above process before experimenting further.
