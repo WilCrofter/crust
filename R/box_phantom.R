@@ -7,7 +7,7 @@
 #' @param ctr_water --a 3-vector specifying the center of the water component
 #' @param r_water --the radius of the water component
 newBoxPhantom <- function(dimensions, ctr_alcohol, r_alcohol, ctr_water, r_water,
-                          frame_in_world=diag(1, 4, 4)){
+                          alignment_in_world=diag(1, 4, 4)){
   ### Speed of sound
   c_silicone <- 1000.0 # mm/msec
   c_alcohol <- 1180.0 # mm/msec (ethyl alcohol)
@@ -35,6 +35,30 @@ newBoxPhantom <- function(dimensions, ctr_alcohol, r_alcohol, ctr_water, r_water
        max(ctr_water-dimensions+r_water) > 0)stop("Water sphere is out of bounds.")
   # Ensure that the spheres don't overlap
   if(r_alcohol+r_water > sqrt(sum((ctr_alcohol-ctr_water)^2)))stop("Water and alcohol spheres overlap.")
+
+  # Convert a 3-vector OR an affine transform from world coordinates
+  # to local coordinates.
+  world2local <- function(u){
+    if(isAffine(u)){
+      return(invAffine(alignment_in_world) %*% u)
+    } else if(is.numeric(u) & length(u) == 3){
+      return(as.vector(invAffine(alignment_in_world) %*% c(u,1))[1:3])
+    } else {
+      stop("Argument is neither a 3-vector nor an affine transform.")
+    }
+  }
+  
+  # Convert a 3-vector OR an affine transform from local coordinates
+  # to world coordinates.
+  local2world <- function(u){
+    if(isAffine(u)){
+      return(alignment_in_world %*% u)
+    } else if(is.numeric(u) & length(u) == 3){
+      return(as.vector(alignment_in_world %*% c(u,1))[1:3])
+    } else {
+      stop("Argument is neither a 3-vector nor an affine transform.")
+    }
+  }
   
   # Is a given point within the phantom?
   isContained <- function(point){

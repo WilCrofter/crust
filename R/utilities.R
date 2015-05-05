@@ -88,9 +88,13 @@ ellipse <- function(r, M=matrix(c(1,0,0,1), 2, 2)){
 # Given an axis of rotation, u, and an angle, theta, return a 3x3 matrix
 # representing rotation about u by theta, assuming the right-hand rule.
 rotationMatrix <- function(u, theta){
+  if(!is.numeric(u) | !is.vector(u) | 
+       length(u) != 3)stop("axis of rotation must be a 3-vector")
+  if(!is.numeric(theta) | length(theta) != 1)stop("theta must be a number")
   normu <- sqrt(sum(u^2))
-  if(isTRUE(all.equal(normu, 0)))stop("axis of rotation cannot be zero")
-  u <- u/normu
+  if(!isTRUE(all.equal(theta,0)) & 
+       isTRUE(all.equal(normu, 0)))stop("axis of rotation cannot be zero unless theta is zero")
+  if(normu > 0) u <- u/normu
   N <- matrix(c(0, u[3], -u[2], -u[3], 0, u[1], u[2], -u[1], 0), 3, 3)
   diag(1, 3, 3) + sin(theta)*N + (1-cos(theta))*(N %*% N)
 }

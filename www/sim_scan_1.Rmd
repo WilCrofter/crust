@@ -1,0 +1,86 @@
+---
+title: "Scanning a simulated phantom"
+author: "W. Bauer"
+date: "05/03/2015"
+output: html_document
+---
+
+This is a manual test of virtual phantom and probes. The objective is to simulate a contralateral ultrasound scan of the phantom and to display the resulting time of flight data as a heat map. Such data consists of time of flight from transmitter $i$ to receiver $j$. Structured as a matrix, it can be displayed graphically as a 2D grid in which color codes time of flight.
+
+```{r}
+source("../R/utilities.R")
+source("../R/box_phantom.R")
+source("../R/probe.R")
+```
+
+In the scheme of this simulation software, virtual rigid bodies have positions and orientations in the "real world." Ultimately, they should have calibrated positions and orientations which may differ from real but upon which image recovery will be based. (See [link.R](../R/link.R).) Here, however, only real positions and orientations are used.
+
+For this manual test, the first requirement is to align probes contralaterally on a virtual phantom. Since this is a test, mainly to get a feel for how best to automate the process, I'll use probes with 64 rather than 128 elements. I'll assume transducer spacing of 60/128 mm, which should be approximately the same as the 60 mm, 128 element Ultrasonix probes used in the laboratory. For simplicity, I'll make the phantom's axial cross section 30mm by 30mm, the same size as the probe.
+
+```{r}
+phantom <- newBoxPhantom(dimensions=c(30, 30, 30), 
+                         ctr_alcohol=c(8, 15-1.5, 18), r_alcohol=6, 
+                         ctr_water=c(24, 16+1.5, 12), r_water=5,
+                         alignment_in_world = diag(1,4,4))
+```
+
+I've given the phantom the identity alignment in the world. This means its internal reference frame (coordinate system) is the same as that of the world. The next task is to create and align the probes. I'll begin with an axial section through the midpoint of the phantom as pictured.
+
+```{r}
+phantom$plotAxialSection(15)
+```
+
+In this case it is obvious that the probes should be centered at x=0, y=15, z=15, and x=30, y=15, z=15, in phantom coordinates, which are the same as world coordinates in this case. However, since I want to outline what might be necessary in the general case, I'm going to treat the situation as if it weren't obvious.
+
+Since I want an axial section through the phantom's center, I'll ask the phantom for two points on its boundary which lie on a line through its center parallel to the x axis. The phantom will assume these specifications are in its internal coordinate system and return points in the same.
+
+```{r}
+centers <- phantom$opposingPoints(c(15,15,15), c(1,0,0))
+centers
+```
+
+The centers returned are those expected. They are given with respect to the phantom's internal reference frame which happens to be the same as the world's, but in general I would convert to world coordinates as follows.
+
+```{r}
+centers[[1]] <- phantom$local2world(centers[[1]])
+centers[[2]] <- phantom$local2world(centers[[2]])
+centers
+```
+
+The points are unchanged as expected in this case.
+
+The next step is to create probes centered at these two positions. Transducers are arrayed along a probe's internal x axis and transmit or receive along its internal z axis. Thus, a probe's x axis must be aligned with the world's y axis and its z axis aligned with the world's x axis, pointing toward the phantom.
+
+For the probe at world coordinate $(30, 15, 15)$ this orientation can be arranged by first rotating $-\pi/2$ about the world's y axis, then rotating $\pi/2$ about the world's x axis, and finally translating to world coordinate $(30, 15, 15)$.
+
+```{r}
+M <- affineTransform(c(0,1,0), -pi/2, c(0,0,0))       # rotate -pi/2 about world y
+M <- affineTransform(c(1,0,0), pi/2, c(0,0,0)) %*% M # rotate pi/2 about world x
+M <- affineTransform(c(0,0,0), 0, c(30, 15, 15)) %*% M # translate to world (30, 15, 15)
+xmitr <- newProbe(n=64, spacing=60/128, alignment_in_world=M)
+```
+
+The orientation of the second probe is opposite to the first along the world's x axis, hence may be obtained from the first by a rotation of $\pi$ around the world's z axis.
+
+```{r}
+P <- affineTransform(c(0,1,0), -pi/2, c(0,0,0))       # rotate -pi/2 about world y
+P <- affineTransform(c(1,0,0), pi/2, c(0,0,0)) %*% P # rotate pi/2 about world x
+P <- affineTransform(c(0,0,1), pi, c(0, 0, 0)) %*% P # rotate pi about world z
+P <- affineTransform(c(0,0,0), 0, c(0, 15, 15)) %*% P # translate to world (0, 15, 15)
+rcvr <- newProbe(n=64, spacing=60/128, alignment_in_world=P)
+```
+
+The phantom can calculate time of flight between two points on its boundary. However it must know the coordinates of those points in its internal reference frame. In general, then, we must convert the coordinates of transducer arrays from probe to phantom coordinates.
+
+```{r}
+transmitters <- sapply(xmitr$transmitters, function(x)xmitr$local2world(c(x, 0, 0)))
+```
+
+
+
+
+```{r echo=FALSE, fig.align='center', fig.show='hold'}
+plotAxialSection(15)
+
+```
+
