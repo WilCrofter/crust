@@ -1,7 +1,7 @@
 #' Creates a probe of n transducers equally spaced along the x axis
 #' in the local reference frame, and at a physical position and
 #' orientation given by frame_in_world. 
-newProbe <- function(n, spacing, alignment_in_world){
+newProbe <- function(n, spacing=60/128, alignment_in_world=diag(1,4,4)){
   n <- as.integer(round(n))
   if(length(n) != 1)stop("n must be an integer")
   if(!is.numeric(spacing) | length(spacing) != 1)stop("spacing must be a real number")

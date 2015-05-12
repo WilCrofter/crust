@@ -146,12 +146,12 @@ newBoxPhantom <- function(dimensions, ctr_alcohol, r_alcohol, ctr_water, r_water
   
   #' Given a line segment defined by two endpoints, u and v, in the phantom or
   #' on its boundary, determine the time of flight between them.
-  timeOfFlight <- function(u, v){
+  timeOfFlight <- function(u, v, warn=FALSE){
     # Argument checks
     if(!is.numeric(u) | length(u) != 3)stop("Argument u must be a numeric 3-vector.")
     if(!is.numeric(v) | length(v) != 3)stop("Argument v must be a numeric 3-vector.")
-    if(!isContained(u))stop("Argument u is outside of the phantom body.")
-    if(!isContained(v))stop("Argument v is outside of the phantom body.")
+    if(warn & !isContained(u))warning("Argument u is outside of the phantom body.")
+    if(warn & !isContained(v))warning("Argument v is outside of the phantom body.")
     l_total <- sqrt(sum((u-v)^2))
     l_alcohol <- lengthThruSphere(u, v, ctr_alcohol, r_alcohol)
     l_water <- lengthThruSphere(u, v, ctr_water, r_water)
