@@ -69,8 +69,25 @@ alignProbes <- function(phantom, point, direction, xmitr, rcvr){
   list(transmitters=transmitters, receivers=receivers, z=point[3])
 }
 
+# recalculate positions of transducer arrays in the phantom's internal reference 
+# frame. Also return z for axial section.
+recalcForScan <- function(phantom, xmitr, rcvr){
+  # Convert from probe to world coordinates
+  transmitters <- sapply(xmitr$transmitters, function(x)xmitr$local2world(c(x, 0, 0)))
+  receivers <- sapply(rcvr$receivers, function(x)rcvr$local2world(c(x, 0, 0)))
+  # Use the mean z coordinate of transmitters and receivers as the appropriate axial section
+  z <- mean(c(transmitters[3,], receivers[3,]))
+  # Convert to phantom internal coordinates
+  transmitters <- sapply(1:(ncol(transmitters)), function(k){phantom$world2local(as.vector(transmitters[,k]))})
+  receivers <- sapply(1:(ncol(receivers)), function(k){phantom$world2local(as.vector(receivers[,k]))})
+  # Return a list of transmitter and receiver coordinates to support a scan,
+  # and a z coordinate to support plotting an axial section.
+  list(transmitters=transmitters, receivers=receivers, z=z)
+}
+
 plotSectionAndArrays <- function(phantom, transmitters, receivers, z, by=4){
   phantom$plotAxialSection(z)
+  title(sub=paste("Showing only one probe in every", by))
   idx <- seq(1, ncol(transmitters), by=by)
   points(transmitters[1,idx], transmitters[2,idx], pch=19, col="blue")
   pos <- c(1, 4)[which.max(apply(transmitters[1:2,], 1, sd))]
