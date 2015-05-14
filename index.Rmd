@@ -5,6 +5,7 @@ output: html_document
 
 #### Notes in reverse chronological order.
 
+* [Automating scan simulation](www/using_box_scanner.html)
 * [Scanning a simulated phantom](www/sim_scan_1.html)
 * [Using the box phantom](www/using_box_phantom.html)
 * [Statistical model of active echo imaging](www/mcmc_ae.html)

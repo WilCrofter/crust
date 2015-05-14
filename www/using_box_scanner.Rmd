@@ -1,0 +1,74 @@
+---
+title: "Automating scan simulation"
+author: "W. Bauer"
+date: "05/12/2015"
+output: html_document
+---
+
+This is a test and illustration of code written to automate simulation of scanning a phantom. It reduces what was done in [Scanning a simulated phantom](sim_scan_1.html) to a few lines of code. As in the link, I use a color map to visualize time of flight data. I hope such visualization will help develop intuition for image recovery which is tolerant to misalignment. 
+
+```{r}
+source("../R/box_scanner.R")
+```
+
+I'll first create a box phantom and two probes. To keep run times short I'll give the probes only 32 elements.
+
+```{r}
+phantom <- newBoxPhantom(dimensions=c(30, 30, 30), 
+                         ctr_alcohol=c(8, 15-1.5, 18), r_alcohol=6, 
+                         ctr_water=c(24, 16+1.5, 12), r_water=5,
+                         alignment_in_world = diag(1,4,4))
+xmitr <- newProbe(n=32, spacing = 30/32)
+rcvr <- newProbe(n=32, spacing = 30/32)
+```
+
+The `alignProbes` function automates much of the manual process. It will align the probes contralaterally on the phantom boundary, at centers determined by a point and a direction. I'll first align them as in  [Scanning a simulated phantom](sim_scan_1.html) using a point, `c(15, 15, 15)` at the phantom center, and the x direction, `c(1, 0, 0)`. Function `plotSectionAndArrays` will display the setup.
+
+```{r fig.align='center'}
+temp <- alignProbes(phantom, c(15,15,15), c(1,0,0), xmitr, rcvr)
+plotSectionAndArrays(phantom, temp$transmitters, temp$receivers, temp$z, by=2)
+```
+
+The value returned from `alignProbes` is a list containing the locations of transmitters and receivers relative to the phantom's internal reference frame, and the world coordinate, z, of the relevant axial section. The function, `doScan`, will simulate a scan, and function `plotScan` will plot the result.
+
+```{r fig.align='center'}
+scan <- doScan(phantom, temp$transmitters, temp$receivers)
+plotScan(scan)
+```
+
+I'll change the alignment of the receiving probe by a slight rotation about the x axis. Function `recalcForScan` will recalculate the information I need for a second scan. Distortion caused by the misalignment is clear.
+
+```{r fig.align='center'}
+rcvr$adjustBy(affineTransform(c(1,0,0), pi/20, c(0,0,0)))
+temp <- recalcForScan(phantom, xmitr, rcvr)
+scan2 <- doScan(phantom, temp$transmitters, temp$receivers)
+plotScan(scan2)
+```
+
+By introducing the sphere of water slowly, using scans from z=7 (all silicone,) to z=7.3, its effect on time of flight can be seen.
+
+```{r fig.align='center', fig.width=10}
+par(mfrow=c(1,2))
+for(z in seq(7, 7.3, by=.1)){
+  temp <- alignProbes(phantom, c(15,15,z), c(1,0,0), xmitr, rcvr)
+  plotSectionAndArrays(phantom, temp$transmitters, temp$receivers, temp$z, by=2, legends=FALSE)
+  scan <- doScan(phantom, temp$transmitters, temp$receivers)
+  plotScan(scan, legends=FALSE)
+  title(sub=paste("z = ", z))
+  text(-10, 30, paste("z = ", z), cex=1.5)
+  }
+```
+
+A scan need not be conducted from left to right. To illustate, I'll repeat the above, but scanning from top to bottom.
+```{r fig.align='center', fig.width=10}
+par(mfrow=c(1,2))
+for(z in seq(7, 7.3, by=.1)){
+  temp <- alignProbes(phantom, c(15,15,z), c(0,1,0), xmitr, rcvr)
+  plotSectionAndArrays(phantom, temp$transmitters, temp$receivers, temp$z, by=2, legends=FALSE)
+  scan <- doScan(phantom, temp$transmitters, temp$receivers)
+  plotScan(scan, legends=FALSE)
+  title(sub=paste("z = ", z))
+  text(-10, 30, paste("z = ", z), cex=1.5)
+  }
+```
+

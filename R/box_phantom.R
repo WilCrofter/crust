@@ -123,7 +123,7 @@ newBoxPhantom <- function(dimensions, ctr_alcohol, r_alcohol, ctr_water, r_water
   
   #' Plot an axial (horizontal) section of the phantom at z=k
   #' TODO: generalize to a planar section of any sort
-  plotAxialSection <- function(k){
+  plotAxialSection <- function(k, legends=TRUE){
     # Argument checks
     if(!is.numeric(k) | length(k) != 1)stop("k must be a number")
     if(!(k>=0) | !(k <= dimensions[3]))stop("section is out of bounds")
@@ -141,17 +141,17 @@ newBoxPhantom <- function(dimensions, ctr_alcohol, r_alcohol, ctr_water, r_water
       theta <- (pi/25)*(0:50)
       polygon(ctr_water[1]+r*cos(theta), ctr_water[2]+r*sin(theta), col="lightblue", lwd=3)
     }
-    legend('topleft', c("silicone", "alcohol", "water"), bg="white", fill=c("lightyellow", "pink", "lightblue"))
+    if(legends)legend('topleft', c("silicone", "alcohol", "water"), bg="white", fill=c("lightyellow", "pink", "lightblue"))
   }
   
   #' Given a line segment defined by two endpoints, u and v, in the phantom or
   #' on its boundary, determine the time of flight between them.
-  timeOfFlight <- function(u, v){
+  timeOfFlight <- function(u, v, warn=FALSE){
     # Argument checks
     if(!is.numeric(u) | length(u) != 3)stop("Argument u must be a numeric 3-vector.")
     if(!is.numeric(v) | length(v) != 3)stop("Argument v must be a numeric 3-vector.")
-    if(!isContained(u))stop("Argument u is outside of the phantom body.")
-    if(!isContained(v))stop("Argument v is outside of the phantom body.")
+    if(warn & !isContained(u))warning("Argument u is outside of the phantom body.")
+    if(warn & !isContained(v))warning("Argument v is outside of the phantom body.")
     l_total <- sqrt(sum((u-v)^2))
     l_alcohol <- lengthThruSphere(u, v, ctr_alcohol, r_alcohol)
     l_water <- lengthThruSphere(u, v, ctr_water, r_water)
