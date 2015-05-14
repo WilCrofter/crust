@@ -85,8 +85,8 @@ recalcForScan <- function(phantom, xmitr, rcvr){
   list(transmitters=transmitters, receivers=receivers, z=z)
 }
 
-plotSectionAndArrays <- function(phantom, transmitters, receivers, z, by=4){
-  phantom$plotAxialSection(z)
+plotSectionAndArrays <- function(phantom, transmitters, receivers, z, by=4, legends=TRUE){
+  phantom$plotAxialSection(z, legends=legends)
   title(sub=paste("Showing only one probe in every", by))
   idx <- seq(1, ncol(transmitters), by=by)
   points(transmitters[1,idx], transmitters[2,idx], pch=19, col="blue")
@@ -96,7 +96,7 @@ plotSectionAndArrays <- function(phantom, transmitters, receivers, z, by=4){
   points(receivers[1,idx], receivers[2,idx], pch=19, col="red")
   pos <- c(3, 2)[which.max(apply(transmitters[1:2,], 1, sd))]
   text(receivers[1,idx], receivers[2,idx], labels=as.character(idx), pos=pos, col="red" )
-  legend("topright", c("transmitter", "receiver"), pch=19, col=c("blue", "red"))
+  if(legends)legend("topright", c("transmitter", "receiver"), pch=19, col=c("blue", "red"))
 }
 
 doScan <- function(phantom, transmitters, receivers){
@@ -109,8 +109,8 @@ doScan <- function(phantom, transmitters, receivers){
   ans
 }
 
-plotScan <- function(scan){
+plotScan <- function(scan, legends=TRUE){
   image(1:nrow(scan), 1:ncol(scan), scan, asp=1, col=rainbow(100), xlab="Transmitter i", ylab="Receiver j", main="Time of flight vs path i,j")
   temp <- round(seq(min(scan), max(scan), length.out = 10), 4)
-  legend('topright', as.character(temp), fill=rainbow(10), title="ToF (msec)")
+  if(legends)legend('topright', as.character(temp), fill=rainbow(10), title="ToF (msec)")
 }

@@ -123,7 +123,7 @@ newBoxPhantom <- function(dimensions, ctr_alcohol, r_alcohol, ctr_water, r_water
   
   #' Plot an axial (horizontal) section of the phantom at z=k
   #' TODO: generalize to a planar section of any sort
-  plotAxialSection <- function(k){
+  plotAxialSection <- function(k, legends=TRUE){
     # Argument checks
     if(!is.numeric(k) | length(k) != 1)stop("k must be a number")
     if(!(k>=0) | !(k <= dimensions[3]))stop("section is out of bounds")
@@ -141,7 +141,7 @@ newBoxPhantom <- function(dimensions, ctr_alcohol, r_alcohol, ctr_water, r_water
       theta <- (pi/25)*(0:50)
       polygon(ctr_water[1]+r*cos(theta), ctr_water[2]+r*sin(theta), col="lightblue", lwd=3)
     }
-    legend('topleft', c("silicone", "alcohol", "water"), bg="white", fill=c("lightyellow", "pink", "lightblue"))
+    if(legends)legend('topleft', c("silicone", "alcohol", "water"), bg="white", fill=c("lightyellow", "pink", "lightblue"))
   }
   
   #' Given a line segment defined by two endpoints, u and v, in the phantom or

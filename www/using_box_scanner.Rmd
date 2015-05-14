@@ -1,11 +1,11 @@
 ---
-title: "Using the box phantom scanner"
+title: "Automating scan simulation"
 author: "W. Bauer"
 date: "05/12/2015"
 output: html_document
 ---
 
-This is a test and illustration of code written to automate and generalize what was done manually in [Scanning a simulated phantom](sim_scan_1.html). It is also a preliminary look at the effect of misalignment on time-of-flight data.
+This is a test and illustration of code written to automate simulation of scanning a phantom. It reduces what was done in [Scanning a simulated phantom](sim_scan_1.html) to a few lines of code. As in the link, I use a color map to visualize time of flight data. I hope such visualization will help develop intuition for image recovery which is tolerant to misalignment. 
 
 ```{r}
 source("../R/box_scanner.R")
@@ -36,13 +36,39 @@ scan <- doScan(phantom, temp$transmitters, temp$receivers)
 plotScan(scan)
 ```
 
-I'll change the alignment of the receiving probe by a slight rotation about the x axis. Function `recalcForScan` will recalculate the information I need for a second scan.
+I'll change the alignment of the receiving probe by a slight rotation about the x axis. Function `recalcForScan` will recalculate the information I need for a second scan. Distortion caused by the misalignment is clear.
 
-```{r}
+```{r fig.align='center'}
 rcvr$adjustBy(affineTransform(c(1,0,0), pi/20, c(0,0,0)))
 temp <- recalcForScan(phantom, xmitr, rcvr)
 scan2 <- doScan(phantom, temp$transmitters, temp$receivers)
 plotScan(scan2)
 ```
 
-The change is clear, though not necessarily informative.
+By introducing the sphere of water slowly, using scans from z=7 (all silicone,) to z=7.3, its effect on time of flight can be seen.
+
+```{r fig.align='center', fig.width=10}
+par(mfrow=c(1,2))
+for(z in seq(7, 7.3, by=.1)){
+  temp <- alignProbes(phantom, c(15,15,z), c(1,0,0), xmitr, rcvr)
+  plotSectionAndArrays(phantom, temp$transmitters, temp$receivers, temp$z, by=2, legends=FALSE)
+  scan <- doScan(phantom, temp$transmitters, temp$receivers)
+  plotScan(scan, legends=FALSE)
+  title(sub=paste("z = ", z))
+  text(-10, 30, paste("z = ", z), cex=1.5)
+  }
+```
+
+A scan need not be conducted from left to right. To illustate, I'll repeat the above, but scanning from top to bottom.
+```{r fig.align='center', fig.width=10}
+par(mfrow=c(1,2))
+for(z in seq(7, 7.3, by=.1)){
+  temp <- alignProbes(phantom, c(15,15,z), c(0,1,0), xmitr, rcvr)
+  plotSectionAndArrays(phantom, temp$transmitters, temp$receivers, temp$z, by=2, legends=FALSE)
+  scan <- doScan(phantom, temp$transmitters, temp$receivers)
+  plotScan(scan, legends=FALSE)
+  title(sub=paste("z = ", z))
+  text(-10, 30, paste("z = ", z), cex=1.5)
+  }
+```
+
