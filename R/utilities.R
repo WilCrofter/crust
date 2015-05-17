@@ -172,7 +172,7 @@ rusphere <- function(n, half=FALSE){
 alignmentError <- function(sd_translation=3/2, sd_angle=pi/360){
   alpha <- (pi^2/sd_angle^2 - 1)/2
   affineTransform(as.vector(rusphere(1)), 
-                  rbeta(1, alpha, alpha), 
+                  pi*(rbeta(1, alpha, alpha)-.5), 
                   rnorm(3,sd = sd_translation))
 }
 
