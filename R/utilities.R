@@ -176,3 +176,14 @@ alignmentError <- function(sd_translation=3/2, sd_angle=pi/360){
                   rnorm(3,sd = sd_translation))
 }
 
+# Given three 3-vectors, u, v, w, and a series of scalars, k, find all lambda in the
+# unit interval such that the inner product of w with u + lambda*(v-u) is one of the scalars
+# in k.
+wCrossings <- function(u, v, w, k){
+  if(!is.numeric(u) | !(length(u)==3))stop("u is not a numeric 3 vector")
+  if(!is.numeric(v) | !(length(v)==3))stop("v is not a numeric 3 vector")
+  if(!is.numeric(w) | !(length(w)==3))stop("w is not a numeric 3 vector")
+  if(!is.numeric(k) | !is.vector(k))stop("k is not a numeric vector")
+  lambda <- (k- sum(u*w))/sum((v-u)*w)
+  lambda[lambda >= 0 & lambda <= 1]
+}
