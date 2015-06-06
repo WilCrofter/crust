@@ -187,3 +187,54 @@ wCrossings <- function(u, v, w, k){
   lambda <- (k- sum(u*w))/sum((v-u)*w)
   lambda[lambda >= 0 & lambda <= 1]
 }
+
+# Given an nxm uniform grid in the x,y plane and given a line determined
+# by two endpoints, u and v, (3-vectors not necessarily in the x,y plane,) return 
+# the indices of the cells which the line intersects, and the segment lengths
+# of each intersection.
+segmentLengths <- function(n, m, u, v, spacing){
+  if(!is.numeric(u) | !(length(u)==3))stop("u is not a numeric 3 vector")
+  if(!is.numeric(v) | !(length(v)==3))stop("v is not a numeric 3 vector")
+  # The line from u to v must have non-zero length in the x and y directions
+  if(isTRUE(all.equal(u[1:2],v[1:2])))stop("u[1:2] and v[1:2] must not be equal")
+  kx <- (1:(n+1))*spacing
+  ky <- (1:(m+1))*spacing
+  # The endpoints should not be within the grid or some crossings will be missed.
+  # Find grid boundary points which lie on the line which the endpoints determine.
+  # Because the grid is rectangular, it suffices that either the x or y components be on the
+  # boundary.
+  if(!isTRUE(all.equal(u[1],v[1]))){
+    # In the x direction, the grid is between x=spacing and x=(n+1)*spacing, so it suffices
+    # that the endpoints have x components spacing and (n+1)*spacing respectively.
+    uprime <- u + (v-u)*(spacing - u[1])/(v[1]-u[1]) # forces uprime[1] to be 1*spacing
+    vprime <- u + (v-u)*((n+1)*spacing - u[1])/(v[1]-u[1]) # forces vprime[1] to be (n+1)*spacing
+  } else {
+    # u[1] equals v[1], hence u[2] and v[2] are distinct.
+    uprime <- u + (v-u)*(spacing-u[2])/(v[2]-u[2]) # forces uprime[2] to be 1*spacing
+    vprime <- u + (v-u)*((m+1)*spacing - u[2])/(v[2]-u[2]) # forces vprime[2] to be (m+1)*spacing
+  }
+  # Find all the crossings in the x direction. Note, crossings are
+  # numbers, lambda, such that uprime + lambda*(vprime-uprime) crosses
+  # a grid boundary.
+  lambdas <-wCrossings(uprime, vprime, c(1,0,0), kx)
+  # Concatenate crossings in the y direction and sort
+  lambdas <- sort(unique(c(lambdas, wCrossings(uprime, vprime, c(0,1,0), ky))))
+  # Since the lambdas are ordered, they indicate successive border crossings, i.e,
+  # because the lambdas are ordered there will be no border crossings between 
+  #   uprime + lambda[i]*(vprime-uprime) and uprime + lambda[i+1]*(vprime-uprime),
+  # hence these two points define a line segment through a specific cell.
+  # Find the coordinates of successive crossings
+  crossings <- sapply(lambdas, function(lambda)uprime+lambda*(vprime-uprime))
+  # Find the lengths of line segments between successive crossings
+  lengths <- sqrt(colSums((crossings[,-1]-crossings[, -ncol(crossings)])^2))
+  # Identify the associated grid cells. If a and b are crossings, then
+  # (a+b)/2 will be an interior point of the associated cell. Find x, y
+  # coordinates of interior points.
+  interiors <- (crossings[1:2, -1] + crossings[1:2,-ncol(crossings)])/2
+  # If an interior point's coordinates are divided by spacing, the integer
+  # parts of the result will index the cell
+  cells <- floor(interiors/spacing)
+  # Return the result in a data frame
+  data.frame(x_index=cells[1,], y_index=cells[2,], segment_length=lengths)
+}
+
