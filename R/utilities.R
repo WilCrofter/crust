@@ -197,6 +197,13 @@ segmentLengths <- function(n, m, u, v, spacing){
   if(!is.numeric(v) | !(length(v)==3))stop("v is not a numeric 3 vector")
   # The line from u to v must have non-zero length in the x and y directions
   if(isTRUE(all.equal(u[1:2],v[1:2])))stop("u[1:2] and v[1:2] must not be equal")
+  # The line from u to v must have a point interior to the grid
+  i1 <- sort(c(spacing-u[1], (n+1)*spacing-u[1])/(v[1]-u[1]))
+  i2 <- sort(c(spacing-u[2], (m+1)*spacing-u[2])/(v[2]-u[2]))
+  if( i1[1] > i2[2] | isTRUE(all.equal(i1[1], i2[2])) |
+      i2[1] > i1[2] | isTRUE(all.equal(i2[1], i1[2]))){
+        stop("The line between u and v does not intersect the interior of the grid.")
+  }
   kx <- (1:(n+1))*spacing
   ky <- (1:(m+1))*spacing
   # The endpoints should not be within the grid or some crossings will be missed.
@@ -225,8 +232,18 @@ segmentLengths <- function(n, m, u, v, spacing){
   # hence these two points define a line segment through a specific cell.
   # Find the coordinates of successive crossings
   crossings <- sapply(lambdas, function(lambda)uprime+lambda*(vprime-uprime))
+  # Omit crossings which are exterior to the grid.
+  crossings <- crossings[, !(crossings[1,] < spacing) & 
+                           !(crossings[1, ] > (n+1)*spacing) & 
+                           !(crossings[2,] < spacing) & 
+                           !(crossings[2,] > (m+1)*spacing)]
   # Find the lengths of line segments between successive crossings
-  lengths <- sqrt(colSums((crossings[,-1]-crossings[, -ncol(crossings)])^2))
+  temp <- (crossings[1:3,-1]-crossings[1:3, -ncol(crossings)])^2
+  lengths <- if(is.matrix(temp)){
+    sqrt(colSums(temp))
+  } else {
+    sqrt(sum(temp))
+  }
   # Identify the associated grid cells. If a and b are crossings, then
   # (a+b)/2 will be an interior point of the associated cell. Find x, y
   # coordinates of interior points.
@@ -234,7 +251,12 @@ segmentLengths <- function(n, m, u, v, spacing){
   # If an interior point's coordinates are divided by spacing, the integer
   # parts of the result will index the cell
   cells <- floor(interiors/spacing)
-  # Return the result in a data frame
-  data.frame(x_index=cells[1,], y_index=cells[2,], segment_length=lengths)
+  # Return the result in a data frame, handling the special case
+  # in which there is only one cell intersected
+  if(is.matrix(cells)){
+    return(data.frame(x_index=cells[1,], y_index=cells[2,], segment_length=lengths))
+  } else {
+    return(data.frame(x_index=cells[1], y_index=cells[2], segment_length=lengths))
+  }
 }
 
