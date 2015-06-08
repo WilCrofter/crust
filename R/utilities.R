@@ -176,3 +176,87 @@ alignmentError <- function(sd_translation=3/2, sd_angle=pi/360){
                   rnorm(3,sd = sd_translation))
 }
 
+# Given three 3-vectors, u, v, w, and a series of scalars, k, find all lambda in the
+# unit interval such that the inner product of w with u + lambda*(v-u) is one of the scalars
+# in k.
+wCrossings <- function(u, v, w, k){
+  if(!is.numeric(u) | !(length(u)==3))stop("u is not a numeric 3 vector")
+  if(!is.numeric(v) | !(length(v)==3))stop("v is not a numeric 3 vector")
+  if(!is.numeric(w) | !(length(w)==3))stop("w is not a numeric 3 vector")
+  if(!is.numeric(k) | !is.vector(k))stop("k is not a numeric vector")
+  lambda <- (k- sum(u*w))/sum((v-u)*w)
+  lambda[lambda >= 0 & lambda <= 1]
+}
+
+# Given an nxm uniform grid in the x,y plane and given a line determined
+# by two endpoints, u and v, (3-vectors not necessarily in the x,y plane,) return 
+# the indices of the cells which the line intersects, and the segment lengths
+# of each intersection.
+segmentLengths <- function(n, m, u, v, spacing){
+  if(!is.numeric(u) | !(length(u)==3))stop("u is not a numeric 3 vector")
+  if(!is.numeric(v) | !(length(v)==3))stop("v is not a numeric 3 vector")
+  # The line from u to v must have non-zero length in the x and y directions
+  if(isTRUE(all.equal(u[1:2],v[1:2])))stop("u[1:2] and v[1:2] must not be equal")
+  # The line from u to v must have a point interior to the grid
+  i1 <- sort(c(spacing-u[1], (n+1)*spacing-u[1])/(v[1]-u[1]))
+  i2 <- sort(c(spacing-u[2], (m+1)*spacing-u[2])/(v[2]-u[2]))
+  if( i1[1] > i2[2] | isTRUE(all.equal(i1[1], i2[2])) |
+      i2[1] > i1[2] | isTRUE(all.equal(i2[1], i1[2]))){
+        stop("The line between u and v does not intersect the interior of the grid.")
+  }
+  kx <- (1:(n+1))*spacing
+  ky <- (1:(m+1))*spacing
+  # The endpoints should not be within the grid or some crossings will be missed.
+  # Find grid boundary points which lie on the line which the endpoints determine.
+  # Because the grid is rectangular, it suffices that either the x or y components be on the
+  # boundary.
+  if(!isTRUE(all.equal(u[1],v[1]))){
+    # In the x direction, the grid is between x=spacing and x=(n+1)*spacing, so it suffices
+    # that the endpoints have x components spacing and (n+1)*spacing respectively.
+    uprime <- u + (v-u)*(spacing - u[1])/(v[1]-u[1]) # forces uprime[1] to be 1*spacing
+    vprime <- u + (v-u)*((n+1)*spacing - u[1])/(v[1]-u[1]) # forces vprime[1] to be (n+1)*spacing
+  } else {
+    # u[1] equals v[1], hence u[2] and v[2] are distinct.
+    uprime <- u + (v-u)*(spacing-u[2])/(v[2]-u[2]) # forces uprime[2] to be 1*spacing
+    vprime <- u + (v-u)*((m+1)*spacing - u[2])/(v[2]-u[2]) # forces vprime[2] to be (m+1)*spacing
+  }
+  # Find all the crossings in the x direction. Note, crossings are
+  # numbers, lambda, such that uprime + lambda*(vprime-uprime) crosses
+  # a grid boundary.
+  lambdas <-wCrossings(uprime, vprime, c(1,0,0), kx)
+  # Concatenate crossings in the y direction and sort
+  lambdas <- sort(unique(c(lambdas, wCrossings(uprime, vprime, c(0,1,0), ky))))
+  # Since the lambdas are ordered, they indicate successive border crossings, i.e,
+  # because the lambdas are ordered there will be no border crossings between 
+  #   uprime + lambda[i]*(vprime-uprime) and uprime + lambda[i+1]*(vprime-uprime),
+  # hence these two points define a line segment through a specific cell.
+  # Find the coordinates of successive crossings
+  crossings <- sapply(lambdas, function(lambda)uprime+lambda*(vprime-uprime))
+  # Omit crossings which are exterior to the grid.
+  crossings <- crossings[, !(crossings[1,] < spacing) & 
+                           !(crossings[1, ] > (n+1)*spacing) & 
+                           !(crossings[2,] < spacing) & 
+                           !(crossings[2,] > (m+1)*spacing)]
+  # Find the lengths of line segments between successive crossings
+  temp <- (crossings[1:3,-1]-crossings[1:3, -ncol(crossings)])^2
+  lengths <- if(is.matrix(temp)){
+    sqrt(colSums(temp))
+  } else {
+    sqrt(sum(temp))
+  }
+  # Identify the associated grid cells. If a and b are crossings, then
+  # (a+b)/2 will be an interior point of the associated cell. Find x, y
+  # coordinates of interior points.
+  interiors <- (crossings[1:2, -1] + crossings[1:2,-ncol(crossings)])/2
+  # If an interior point's coordinates are divided by spacing, the integer
+  # parts of the result will index the cell
+  cells <- floor(interiors/spacing)
+  # Return the result in a data frame, handling the special case
+  # in which there is only one cell intersected
+  if(is.matrix(cells)){
+    return(data.frame(x_index=cells[1,], y_index=cells[2,], segment_length=lengths))
+  } else {
+    return(data.frame(x_index=cells[1], y_index=cells[2], segment_length=lengths))
+  }
+}
+
