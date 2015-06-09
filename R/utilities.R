@@ -260,3 +260,26 @@ segmentLengths <- function(n, m, u, v, spacing){
   }
 }
 
+# Iterative optimization in b of S %*% b - tof based on an EM
+# algorithm with a log Poisson objective function, as described
+# in Arman Rahmim, Statistical List-Mode Image Reconstruction
+# and Motion Compensation Techniques in High Resolution Positron
+# Emission Tomography.
+# http://pages.jh.edu/~rahmim/research_work/PhD_thesis.pdf
+# NOTES:
+# 1. The code itself is not optimized. R's copy-on-modify rules
+# will result in copies of the arguments to be made.
+# 2. The objective function is log Poisson, not least squares
+# (i.e., log i.i.d. normal,) hence poissonSolver will get somewhat
+# different answers than a least squares solver.
+#' @param S an nxm non-negative matrix, Matrix (from package Matrix,) or equivalent
+#' @param b an m long positive vector, a starting position for the solver
+#' @param tof an n-long, positive vector.
+poissonSolver <- function(S, b = runif(ncol(S)), tof, niter=1){
+  K <- colSums(S)
+  for(n in 1:niter){
+    tbar <- tof/(S %*% b)
+    b <- (b/K)*(t(S) %*% tbar)
+  }
+  b
+}
