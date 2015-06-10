@@ -33,8 +33,15 @@ handySetup <- function(n, z, npix=n){
 # positions, and the grid.
 showSetup <- function(setup){
   plotSectionAndArrays(setup$phantom, setup$align$transmitters, setup$align$receivers,
-                       setup$z, by=4, legends=TRUE)
+                       setup$z, by=ceiling(setup$npix/8), legends=TRUE)
   plotGrid(setup$npix, setup$npix, spacing=30/setup$npix, add=TRUE, col="green")
+}
+
+# Add to an existing figure the path from transmitter i to receiver j.
+addPath <- function(i, j, setup, col="magenta", lwd=2){
+  u <- setup$align$transmitters[i,]
+  v <- setup$align$receivers[j,]
+  segments(u[1], u[2], v[1], v[2], col=col, lwd=lwd)
 }
 
 # Return the intersected pixels and lengths of the intersections for the
