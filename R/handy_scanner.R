@@ -39,8 +39,8 @@ showSetup <- function(setup){
 
 # Add to an existing figure the path from transmitter i to receiver j.
 addPath <- function(i, j, setup, col="magenta", lwd=2){
-  u <- setup$align$transmitters[i,]
-  v <- setup$align$receivers[j,]
+  u <- setup$align$transmitters[,i]
+  v <- setup$align$receivers[,j]
   segments(u[1], u[2], v[1], v[2], col=col, lwd=lwd)
 }
 
