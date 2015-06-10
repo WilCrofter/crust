@@ -45,7 +45,8 @@ addPath <- function(i, j, setup, col="magenta", lwd=2){
 }
 
 # Return a matrix of times of flight. Row indices correspond to
-# transmitters, column indices to receivers. 
+# transmitters, column indices to receivers.
+# NOTE: for a color plot, use plotScan on the result.
 scanSetup <- function(setup){
   doScan(setup$phantom, setup$align$transmitters, setup$align$receivers)
 }
