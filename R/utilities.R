@@ -260,6 +260,15 @@ segmentLengths <- function(n, m, u, v, spacing){
   }
 }
 
+plotGrid <- function(n, m, spacing, zero_origin=TRUE, add=FALSE, ...){
+  k <- as.integer(!zero_origin)
+  y <- seq(k, n + k, by=1)*spacing
+  x <- seq(k, m + k, by=1)*spacing
+  if(!add)plot(spacing*(k+c(0, m)), spacing*(k+c(n,0)), type='n', asp=1, ...)
+  segments(x, rep(spacing*k, n+1), x, rep(spacing*(n+k), n+1), ...)
+  segments(rep(spacing*k, m+1), y, rep(spacing*(m+k), m+1), y, ...)
+}
+
 # Iterative optimization in b of S %*% b - tof based on an EM
 # algorithm with a log Poisson objective function, as described
 # in Arman Rahmim, Statistical List-Mode Image Reconstruction
