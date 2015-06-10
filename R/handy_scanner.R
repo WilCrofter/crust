@@ -18,7 +18,7 @@ if(isTRUE(file.info("R")$isdir)){
 #' @param z the z coordinate of the probe plane
 #' @param npix the number of cells in a grid which covers the horizontal section
 #' @return a list of the phantom, the probes (xmitr and rcvr,) an alignment utility (align,) npix, and z. 
-handySetup <- function(n, z, npix=n){
+handySetup <- function(n, z, npix=n-1){
   phantom <- newBoxPhantom(dimensions=c(30, 30, 30), 
                            ctr_alcohol=c(8, 15-1.5, 18), r_alcohol=6, 
                            ctr_water=c(24, 16+1.5, 12), r_water=5,
@@ -26,7 +26,7 @@ handySetup <- function(n, z, npix=n){
   xmitr <- newProbe(n=n, spacing = 30/n)
   rcvr <- newProbe(n=n, spacing = 30/n)
   align <- alignProbes(phantom, c(15,15,z), c(1,0,0), xmitr, rcvr)
-  list(phantom=phantom, xmitr=xmitr, rcvr=rcvr, align=align, npix=npix, z=z)
+  list(phantom=phantom, xmitr=xmitr, rcvr=rcvr, align=align, n=n, npix=npix, z=z)
 }
 
 # Create a figure showing the horizontal section, the transmitter and receiver
@@ -45,7 +45,8 @@ addPath <- function(i, j, setup, col="magenta", lwd=2){
 }
 
 # Return a matrix of times of flight. Row indices correspond to
-# transmitters, column indices to receivers. 
+# transmitters, column indices to receivers.
+# NOTE: for a color plot, use plotScan on the result.
 scanSetup <- function(setup){
   doScan(setup$phantom, setup$align$transmitters, setup$align$receivers)
 }
@@ -57,4 +58,19 @@ pixLengths <- function(i, j, setup){
                  setup$align$transmitters[,i], 
                  setup$align$receivers[,j], 
                  spacing = 30/setup$npix)
+}
+
+# Create the Sij matrix by calling pixLengths in double loop
+createSij <- function(setup){
+  npix <- setup$npix
+  Sij <- matrix(0,nrow=setup$n*(setup$n-1),ncol=npix^2)
+  for (i in 1:(setup$n-1)) 
+    for (j in 1:setup$n){
+      row <- pixLengths(i,j,setup)
+      for (k in 1:length(row$segment_length)) {
+        idx <- (row$x_index[k]-1) * npix + row$y_index[k]
+        Sij[(i-1)*npix + j,idx] <- row$segment_length[k]
+      }
+    }
+  Sij
 }
