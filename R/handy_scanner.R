@@ -44,6 +44,12 @@ addPath <- function(i, j, setup, col="magenta", lwd=2){
   segments(u[1], u[2], v[1], v[2], col=col, lwd=lwd)
 }
 
+# Return a matrix of times of flight. Row indices correspond to
+# transmitters, column indices to receivers. 
+scanSetup <- function(setup){
+  doScan(setup$phantom, setup$align$transmitters, setup$align$receivers)
+}
+
 # Return the intersected pixels and lengths of the intersections for the
 # path between transmitter i and receiver j.
 pixLengths <- function(i, j, setup){
