@@ -68,8 +68,9 @@ createSij <- function(setup){
     for (j in 1:setup$n){
       row <- pixLengths(i,j,setup)
       for (k in 1:length(row$segment_length)) {
-        idx <- (row$x_index[k]-1) * npix + row$y_index[k]
-        Sij[(i-1)*setup$n + j,idx] <- row$segment_length[k]
+        idx <- (row$y_index[k]-1) * npix + row$x_index[k]
+        # Sij[(i-1)*setup$n + j,idx] <- row$segment_length[k]
+        Sij[(j-1)*(setup$n-1) + i, idx] <- row$segment_length[k]
         }
     }
   Sij
