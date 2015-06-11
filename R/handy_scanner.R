@@ -64,13 +64,16 @@ pixLengths <- function(i, j, setup){
 createSij <- function(setup){
   npix <- setup$npix
   Sij <- matrix(0,nrow=setup$n*(setup$n-1),ncol=npix^2)
-  for (i in 1:(setup$n-1)) 
+  for (i in 1:(setup$n-1)) {
     for (j in 1:setup$n){
       row <- pixLengths(i,j,setup)
       for (k in 1:length(row$segment_length)) {
         idx <- (row$x_index[k]-1) * npix + row$y_index[k]
-        Sij[(i-1)*npix + j,idx] <- row$segment_length[k]
+        Sij[(i-1)*setup$n + j,idx] <- row$segment_length[k]
+        print(paste("  ",j,"  ",idx))
       }
     }
+    print(i)
+}
   Sij
 }
