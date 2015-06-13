@@ -1,0 +1,53 @@
+---
+title: "System matrices are ill-conditioned"
+author: "W. Bauer, R. Grdina"
+date: "June 13, 2015"
+output: html_document
+---
+
+### Ill-conditioned system matrices
+
+It appears that system matrices are commonly ill-conditioned. At least this is the case for our simulations. Though the the reasons are not entirely clear, symmetries due to regular spacing are involved. The point is illustrated in the simple setup below. Paths from transmitter 1 to receivers 3 and 4 are shown. These paths will yield identical rows in the system matrix, since they intersect the same cells in segments of the same length.
+
+```{r echo=FALSE, fig.align='center', fig.show='hold', fig.width=7}
+source("../R/handy_scanner.R")
+setup <- handySetup(4, 15, 3)
+showSetup(setup)
+addPath(1, 4, setup)
+addPath(1, 3, setup)
+```
+
+A more complicated case is shown below. There are 31x32 = 992 transmitter-receiver pairs, hence 992 equations and there are 31x31 = 961 pixels, hence 961 unknowns. From the above example we can predict that each of the 31 transmitters will yield two identical equations, i.e., two identical rows of the system matrix, hence we have at most 992-31 = 961 independent equations (rows.)
+
+```{r echo=FALSE, fig.align='center', fig.show='hold', fig.width=7}
+setup <- handySetup(32, 15, 31)
+showSetup(setup)
+```
+
+In fact we have fewer, as the following plot demonstrates. (The math showing why the eigenvalues of $S^TS$ indicate the column rank of $S$ is given at the end of this note.) If we count eigenvalues less than $10^{-13}$ as essentially zero, we find there are 80, thus at most 992-80 = 912 independent equations. 
+
+```{r echo=FALSE, fig.align='center', fig.show='hold', fig.width=7}
+S <- createSij(setup)
+temp <- sort(abs(eigen(t(S) %*% S)$values), decreasing=TRUE)
+plot(temp, log='y', main=expression(paste("Eigenvalues of ", S^T*S)), ylab="Magnitude of eigenvalue", xlab="", sub="S is the system matrix.")
+abline(h=1e-13, col='red', lwd=2)
+text(400, 1e-16, "Below the red line counted as zero", col='red', cex=1.25)
+```
+
+Adjusting the transmitter or receiver positions disrupts the obvious symmetries, but extremely small eigenvalues tend to remain. Increasing pixel size reduces the number of unknowns but, again, extremely small eigenvalues tend to remain unless the grid is made very crude. Neither of these simple strategies is effective.
+
+### Interpretation
+
+If b is a least squares solution to $Sb = tof,$ then $Sb$ is the projection of $tof$ on the column space of $S,$ i.e., the closest point to $tof$ in the space of all linear combinations of the columns of $b.$ If the columns of $S$ are linearly dependent, then $b$ will not be unique: there will be multiple $b$ which produce the same $Sb.$ In fact, there will be infinitely many, since if $Sv = Sb$ and if $u = \epsilon v + (1-\epsilon) b$, then $Su=Sb.$
+
+The foregoing would suggest that a system matrix contains insufficient information to uniquely determine the image, $b,$ which gave rise to observed time of flight measurements. However, there are constraints which were not considered. Namely, the elements of $S$ are all non-negative, and the elements of $b$ are all positive.
+
+So the correct image, $b,$ must have all positive elements. Non-uniqueness is still a problem, however, since if $Sv=Sb$, then even if $v$ has negative elements, $u = \epsilon v + (1-\epsilon) b,$ would have positive elements provided $\epsilon$ were small enough.
+
+### Appendix: eigenvalues of $S^TS$ and the column rank of S.
+
+This is a well-known proof, recorded here for convenience.
+
+If $S^TS$ has a zero eigenvalue, then $S^TSv = 0$ for the associated eigenvector, $v.$ Hence, the dot product, $\lt S^TSv, x \gt,$ of $S^TSv$ with any vector, $x,$ is zero. By the definitions of transpose and dot product, $\lt S^TSv, x \gt = \lt Sv, Sx \gt.$ Hence $\lt Sv, Sx \gt = 0,$ for any $x$. But $Sx$ is an arbitrary element of the column space of $S$. This implies $Sv$ is in the orthogonal complement of the column space of $S.$ However, $Sv$ is also in the column space of $S.$ Since the intersection of a space with its orthogonal complement is ${0}$, $Sv = 0.$
+
+It is clear that if $Sv = 0,$ then $S^TSv = 0$ as well. Thus, $Sv = 0$ if and only if $S^TSv = 0$.

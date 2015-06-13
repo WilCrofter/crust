@@ -10,7 +10,7 @@ if(isTRUE(file.info("R")$isdir)){
   source("R/box_scanner.R")
 } else if(isTRUE(file.info("../R")$isdir)){
   # parent of working directory contains R
-  source("R/box_scanner.R")
+  source("../R/box_scanner.R")
 }
 
 # Create a phantom, two opposing probes, and a grid.
