@@ -245,6 +245,10 @@ segmentLengths <- function(n, m, u, v, spacing, zero_origin=TRUE){
   } else {
     sqrt(sum(temp))
   }
+  # If any of the lengths are essentially zero, eliminate the associated crossing
+  idx <- sapply(lengths, function(x)!isTRUE(all.equal(x,0)))
+  lengths <- lengths[idx]
+  crossings <- crossings[,idx]
   # Identify the associated grid cells. If a and b are crossings, then
   # (a+b)/2 will be an interior point of the associated cell. Find x, y
   # coordinates of interior points.
