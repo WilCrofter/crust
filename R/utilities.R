@@ -240,15 +240,15 @@ segmentLengths <- function(n, m, u, v, spacing, zero_origin=TRUE){
                            !(crossings[2,] > (m+k)*spacing)]
   # Find the lengths of line segments between successive crossings
   temp <- (crossings[1:3,-1]-crossings[1:3, -ncol(crossings)])^2
-  lengths <- if(is.matrix(temp)){
-    sqrt(colSums(temp))
+  if(is.matrix(temp)){
+    lengths <- sqrt(colSums(temp))
   } else {
-    sqrt(sum(temp))
+    lengths <- sqrt(sum(temp))
   }
   # If any of the lengths are essentially zero, eliminate the associated crossing
   idx <- sapply(lengths, function(x)!isTRUE(all.equal(x,0)))
   lengths <- lengths[idx]
-  crossings <- crossings[,idx]
+  crossings <- crossings[,c(idx, TRUE)]
   # Identify the associated grid cells. If a and b are crossings, then
   # (a+b)/2 will be an interior point of the associated cell. Find x, y
   # coordinates of interior points.
