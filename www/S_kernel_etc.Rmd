@@ -64,3 +64,13 @@ The converse is not true; $Sb \le Sc$ does not imply that $b \le c.$ The vectors
 Since $S$ is linear and preserves order, $S[B] = \{Sb | b \in B \},$ is also a convex polytope and a lattice under componentwise max and min. $S$ does not, however, *preserve* componentwise max and min. In general $S(b \vee c) \le Sb \vee Sc$ and $S(b \wedge c) \ge Sb \wedge Sc,$ but equality is not guaranteed.
 
 The abstract algebraic properties of $B$ and $S[B]$ are probably not of great interest here, but associated algorithmic techniques (e.g., from linear programming, or greedy algorithms) may well be.
+
+### Example: formulation of image recovery as a linear program
+
+Suppose $\tau$ is a vector of time-of-flight measurements and we want to find $b^* \in B$ such that $Sb^* = \tau.$
+
+If $Sb \le \tau$ componentwise, then$$ (Sb)_j \le \tau_j\:\:for\: all\: j,\\hence \:(Sb)_j\tau_j \le \tau_j^2\:\:for\:all\:j,\\hence\:Sb\bullet \tau \le \tau \bullet \tau\\hence\: b \bullet S^T\tau \le \tau \bullet \tau,$$using properties of transpose ($^T$) and inner product ($\bullet$) in the last step.
+
+Thus, $b^*$ can be characterized as maximizing $b \bullet S^T\tau$ subject to the linear inequality constraints, $Sb \le \tau$ and $b \in B.$ Finding $b^*$ is a linear programming problem to which the simplex algorithm applies.
+
+An optimal solution $b^*$ will exist as long as $\tau \in S[B],$ which should be the case as long as slowness values of the phantom or body being scanned are in the assumed range. The problem is not the existence of one optimum, but the existence of many.

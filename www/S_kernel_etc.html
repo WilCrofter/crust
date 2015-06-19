@@ -101,6 +101,13 @@ all.equal(max(abs(S %*% v)), 0)</code></pre>
 <p>Since <span class="math">\(S\)</span> is linear and preserves order, <span class="math">\(S[B] = \{Sb | b \in B \},\)</span> is also a convex polytope and a lattice under componentwise max and min. <span class="math">\(S\)</span> does not, however, <em>preserve</em> componentwise max and min. In general <span class="math">\(S(b \vee c) \le Sb \vee Sc\)</span> and <span class="math">\(S(b \wedge c) \ge Sb \wedge Sc,\)</span> but equality is not guaranteed.</p>
 <p>The abstract algebraic properties of <span class="math">\(B\)</span> and <span class="math">\(S[B]\)</span> are probably not of great interest here, but associated algorithmic techniques (e.g., from linear programming, or greedy algorithms) may well be.</p>
 </div>
+<div id="example-formulation-of-image-recovery-as-a-linear-program" class="section level3">
+<h3>Example: formulation of image recovery as a linear program</h3>
+<p>Suppose <span class="math">\(\tau\)</span> is a vector of time-of-flight measurements and we want to find <span class="math">\(b^* \in B\)</span> such that <span class="math">\(Sb^* = \tau.\)</span></p>
+<p>If <span class="math">\(Sb \le \tau\)</span> componentwise, then<span class="math">\[ (Sb)_j \le \tau_j\:\:for\: all\: j,\\hence \:(Sb)_j\tau_j \le \tau_j^2\:\:for\:all\:j,\\hence\:Sb\bullet \tau \le \tau \bullet \tau\\hence\: b \bullet S^T\tau \le \tau \bullet \tau,\]</span>using properties of transpose (<span class="math">\(^T\)</span>) and inner product (<span class="math">\(\bullet\)</span>) in the last step.</p>
+<p>Thus, <span class="math">\(b^*\)</span> can be characterized as maximizing <span class="math">\(b \bullet S^T\tau\)</span> subject to the linear inequality constraints, <span class="math">\(Sb \le \tau\)</span> and <span class="math">\(b \in B.\)</span> Finding <span class="math">\(b^*\)</span> is a linear programming problem to which the simplex algorithm applies.</p>
+<p>An optimal solution <span class="math">\(b^*\)</span> will exist as long as <span class="math">\(\tau \in S[B],\)</span> which should be the case as long as slowness values of the phantom or body being scanned are in the assumed range. The problem is not the existence of one optimum, but the existence of many.</p>
+</div>
 
 
 </div>
