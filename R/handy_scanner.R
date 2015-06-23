@@ -10,7 +10,7 @@ if(isTRUE(file.info("R")$isdir)){
   source("R/box_scanner.R")
 } else if(isTRUE(file.info("../R")$isdir)){
   # parent of working directory contains R
-  source("../R/box_scanner.R")
+  source("R/box_scanner.R")
 }
 
 # Create a phantom, two opposing probes, and a grid.
@@ -26,8 +26,7 @@ handySetup <- function(n, z, npix=n-1){
   xmitr <- newProbe(n=n, spacing = 30/n)
   rcvr <- newProbe(n=n, spacing = 30/n)
   align <- alignProbes(phantom, c(15,15,z), c(1,0,0), xmitr, rcvr)
-  list(phantom=phantom, xmitr=xmitr, rcvr=rcvr, align=align, n=n, npix=npix, z=z, 
-       reset_xmitr = xmitr$alignment_in_world, reset_rcvr = rcvr$alignment_in_world)
+  list(phantom=phantom, xmitr=xmitr, rcvr=rcvr, align=align, n=n, npix=npix, z=z)
 }
 
 # Create a figure showing the horizontal section, the transmitter and receiver
@@ -75,28 +74,4 @@ createSij <- function(setup){
         }
     }
   Sij
-}
-
-# Apply the given affine transforms to the current probe positions.
-# For example, to translate a probe 1 mm in the y direction (in world
-# coordinates,) use A_xmitr=affineTransform(u, 0, c(0, 1, 0)) where u is any 3-vector.
-# NOTE, USAGE IS IMPORTANT: Use setup <- adjustProbes(setup, A1, A2)
-# In other words, the result MUST be assigned to the first argument. This is awkward
-# and should be fixed, but for now we're stuck with it. 
-adjustProbes <- function(setup, A_xmitr=diag(1,4,4), A_rcvr=diag(1,4,4)){
-  setup$xmitr$adjustBy(A_xmitr)
-  setup$rcvr$adjustBy(A_rcvr)
-  setup$align <- recalcForScan(setup$phantom, setup$xmitr, setup$rcvr)
-  setup
-}
-
-# Reset probes to their original positions
-# NOTE, USAGE IS IMPORTANT: Use setup <- resetProbes(setup)
-# In other words, the result MUST be assigned to the first argument. This is awkward
-# and should be fixed, but for now we're stuck with it. 
-resetProbes <- function(setup){
-  setup$xmitr$moveTo(setup$reset_xmitr)
-  setup$rcvr$moveTo(setup$reset_rcvr)
-  setup$align <- recalcForScan(setup$phantom, setup$xmitr, setup$rcvr)
-  setup
 }
