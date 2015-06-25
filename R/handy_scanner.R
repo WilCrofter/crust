@@ -25,8 +25,21 @@ handySetup <- function(n, z, npix=n-1){
                            alignment_in_world = diag(1,4,4))
   xmitr <- newProbe(n=n, spacing = 30/n)
   rcvr <- newProbe(n=n, spacing = 30/n)
-  align <- alignProbes(phantom, c(15,15,z), c(1,0,0), xmitr, rcvr)
-  list(phantom=phantom, xmitr=xmitr, rcvr=rcvr, align=align, n=n, npix=npix, z=z)
+  setup <- list(phantom=phantom, xmitr=xmitr, rcvr=rcvr, align=NULL, n=n, npix=npix, z=z)
+  setup <- alignX(setup)
+  setup
+}
+
+alignX <- function(setup){
+  pt <- c(setup$phantom$dimensions[1:2]/2,setup$z)
+  setup$align <- alignProbes(setup$phantom, pt, c(1,0,0), setup$xmitr, setup$rcvr)
+  setup
+}
+
+alignY <- function(setup){
+  pt <- c(setup$phantom$dimensions[1:2]/2,setup$z)
+  setup$align <-alignProbes(setup$phantom, pt, c(0,1,0), setup$xmitr, setup$rcvr)
+  setup
 }
 
 # Create a figure showing the horizontal section, the transmitter and receiver
