@@ -44,9 +44,9 @@ alignY <- function(setup){
 
 # Create a figure showing the horizontal section, the transmitter and receiver
 # positions, and the grid.
-showSetup <- function(setup){
+showSetup <- function(setup,legends=TRUE){
   plotSectionAndArrays(setup$phantom, setup$align$transmitters, setup$align$receivers,
-                       setup$z, by=ceiling(setup$npix/8), legends=TRUE)
+                       setup$z, by=ceiling(setup$npix/8), legends=legends)
   plotGrid(setup$npix, setup$npix, spacing=30/setup$npix, add=TRUE, col="green")
 }
 
@@ -76,7 +76,8 @@ pixLengths <- function(i, j, setup){
 # Create the Sij matrix by calling pixLengths in double loop
 createSij <- function(setup){
   npix <- setup$npix
-  Sij <- matrix(0,nrow=setup$n*(setup$n-1),ncol=npix^2)
+  numrows <- setup$n*(setup$n-1)
+  Sij <- matrix(0,nrow=numrows,ncol=npix^2)
   for (i in 1:(setup$n-1)) 
     for (j in 1:setup$n){
       row <- pixLengths(i,j,setup)
@@ -86,5 +87,18 @@ createSij <- function(setup){
         Sij[(j-1)*(setup$n-1) + i, idx] <- row$segment_length[k]
         }
     }
+  #now do some checks on Sij
+  rsums <- rowSums(Sij)
+  
+  for (i in 1:numrows) {
+    nz <- sum(Sij[i,]>0)
+    if (nz<npix)stop("too few nonzero elements in row ",i)
+    cl <- floor((i-1)/(setup$n-1))+1
+    rw <- (i-1)%%(setup$n-1) + 1
+    dist <- sqrt((setup$align$transmitters[1,rw]-setup$align$receivers[1,cl])^2 +
+                   (setup$align$transmitters[2,rw]-setup$align$receivers[2,cl])^2 +
+                   (setup$align$transmitters[3,rw]-setup$align$receivers[3,cl])^2)
+    if (!isTRUE(all.equal(dist,rsums[i])))stop("pathlengths not equal in row ",i," ",dist," ",rsums[i])
+  }
   Sij
 }

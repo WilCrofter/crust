@@ -1,0 +1,70 @@
+---
+title: "Two Scans are Better than One"
+author: "W. Bauer and R. Grdina"
+date: "June 26, 2015"
+output: html_document
+---
+
+### Reducing the number of 0 eigenvalues
+
+As a previous note [Null space of S and other algebraic characteristics](wilcrofter.github.io/crust/www/S_kernel_etc.html) indicated, "a system matrix will have a null space of dimension at least n-1, where n is the number of columns of pixels in the associated image." In fact, the particular example in that note with 8 receivers and 7 columns of pixels had 8 0-eigenvalues, two more than could be explained algebraically. We found that by increasing the number of receivers to 16, the number of 0-eigenvalues dropped to 6,  the minimum number of such eigenvalues
+
+```{r echo=FALSE, fig.show='hold', fig.align='center', fig.width=8}
+source("../R/handy_scanner.R")
+setup <- handySetup(8, 2, 7)
+showSetup(setup)
+xvals <- seq(0,30,by=30/7)
+polygon(xvals[c(6,7,7,6,6)], c(0,0,30,30,0), border=NA, col='yellow')
+polygon(xvals[c(3,4,4,3,3)], c(0,0,30,30,0), border=NA, col='yellow')
+```
+
+The element, $S_{ij},$ of a system matrix is the length of the $i^{th}$ path through $j^{th}$ pixel. If, for the $i^{th}$ path, the entries corresponding to all pixels in a column of the image are added up, the length of the segment of the $i^{th}$ path through that column of the image results. A vector can be constructed to subtract two such total lengths from one another. The result, of course, will be zero.
+
+For the two columns pictured, and our convention for numbering pixels (i.e., left to right, bottom to top,) such a vector would be 7 repetitions of the vector $(0, 0, 1, 0, 0, -1, 0).$
+
+```{r}
+# Form the system matrix for the setup pictured
+S <- createSij(setup)
+# Form the vector
+v <- rep(c(0, 0, 1, 0, 0, -1, 0), 7)
+# Is the maximum absolute value of S %*% v zero within tolerance?
+all.equal(max(abs(S %*% v)), 0)
+```
+
+For the case pictured, all vectors of this type can be formed from vectors consisting of 7 repetitions of $(1,-1,0,0,0,0,0),\:(0,1,-1,0,0,0,0),\: \ldots, \: (0,0,0,0,0,1,-1).$ There are 6 such vectors, one less than the number of columns of pixels in the image. The logic easily extends to an arbitrary number, n, of columns. Hence the null space of S is of dimension at least n-1.
+
+It should be noted that vectors of this type could produce artifactual stripes in a recovered image. 
+
+It should also be noted the null space of S generally has higher dimension than n-1. For the case pictured, for instance, $S^TS$ has 8 eigenvalues of 0 (within numerical tolerance) which implies that the null space of $S$ has dimension 8, not 6. The origin of the additional null eigenvalues is as yet unclear.
+
+### Algebraic structure resulting from non-negativity
+
+Since the above implies that image recovery from a single scan will always be somewhat indeterminate, it is natural to consider additional constraints. Since all quantities of interest are non-negative, inequality constraints are an obvious choice.
+
+Speeds of sound in human tissue (excluding teeth) vary from about 1400 to about 3300 m/sec. (Source, [Nat'l Physical Lab, UK](http://www.kayelaby.npl.co.uk/general_physics/2_4/2_4_6.html).) Their reciprocals, slowness values, will thus range from about 0.0003 sec/m to about 0.0007 sec/m. Reconstructed images will thus consist of vectors, $b,$ such that $0.0003 \le b \le 0.0007$ componentwise, (i.e., $0.0003 \le b_j \le 0.0007$, for each component, $b_j.$)
+
+The polytope, $B,$ consisting of all vectors, $b,$ satisfying $0.0003 \le b \le 0.0007$ is an algebraic structure known as a lattice. That is,
+
+* $B$ is partially ordered under componentwise comparison--If $b \in B$ and $c \in B$, then $b \le c$ if and only if $b_j \le c_j$ for all components, $j.$
+* If $b \in B$ and $c \in B$ then their componentwise maximum, written $b \vee c,$ is also in $B.$
+* If $b \in B$ and $c \in B$ then their componentwise minimum, written $b \wedge c,$ is aslo in $B.$
+
+$B$ is also convex: if $b \in B,$ $c \in B,$ and $\lambda$ is a scalar between 0 and 1, then $\lambda b + (1-\lambda) c \in B,$ as well.
+
+Since the elements of $S$ are all non-negative, $S$ preserves order on $B.$ If $b \le c$ componentwise, then $Sb \le Sc$ componentwise. Since $b_j \le c_j$ for all components, $j,$ and since $S_{ij} \ge 0$ for all $i$ and $j,$ we have $S_{ij}b_j \le S_{ij}c$ for all $j$, hence $\sum S_{ij}b_j \le \sum S_{ij}c,$ hence $Sb \le Sc$.
+
+The converse is not true; $Sb \le Sc$ does not imply that $b \le c.$ The vectors, $b$ and $c,$ may not be comparable, i.e., some components of $b$ may be bigger than the corresponding components of $c$ and some may be smaller.
+
+Since $S$ is linear and preserves order, $S[B] = \{Sb | b \in B \},$ is also a convex polytope and a lattice under componentwise max and min. $S$ does not, however, *preserve* componentwise max and min. In general $S(b \vee c) \le Sb \vee Sc$ and $S(b \wedge c) \ge Sb \wedge Sc,$ but equality is not guaranteed.
+
+The abstract algebraic properties of $B$ and $S[B]$ are probably not of great interest here, but associated algorithmic techniques (e.g., from linear programming, or greedy algorithms) may well be.
+
+### Example: formulation of image recovery as a linear program
+
+Suppose $\tau$ is a vector of time-of-flight measurements and we want to find $b^* \in B$ such that $Sb^* = \tau.$
+
+If $Sb \le \tau$ componentwise, then$$ (Sb)_j \le \tau_j\:\:for\: all\: j,\\hence \:(Sb)_j\tau_j \le \tau_j^2\:\:for\:all\:j,\\hence\:Sb\bullet \tau \le \tau \bullet \tau\\hence\: b \bullet S^T\tau \le \tau \bullet \tau,$$using properties of transpose ($^T$) and inner product ($\bullet$) in the last step.
+
+Thus, $b^*$ can be characterized as maximizing $b \bullet S^T\tau$ subject to the linear inequality constraints, $Sb \le \tau$ and $b \in B.$ Finding $b^*$ is a linear programming problem to which the simplex algorithm applies.
+
+An optimal solution $b^*$ will exist as long as $\tau \in S[B],$ which should be the case as long as slowness values of the phantom or body being scanned are in the assumed range. The problem is not the existence of one optimum, but the existence of many.
