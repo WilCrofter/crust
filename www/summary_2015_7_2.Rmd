@@ -27,6 +27,8 @@ text(12,12,"y = x + 2", col="blue")
 
 ### Two scans are better than one
 
+With two scans and enough transducers we eliminate the nullspace and get a unique least squares solution.
+
 ```{r echo=FALSE, fig.align='center',fig.show='hold',fig.width=9}
 source("../R/handy_scanner.R")
 par(mfrow=c(1,2))
@@ -43,6 +45,31 @@ tof <- c(as.vector(tof),as.vector(tofY))
 myb <- solve(t(myS) %*% myS,t(myS) %*% tof)
 myb <- matrix(myb,12,12)
 par(mfrow=c(1,1))
-image(myb,asp=1,col=gray.colors(50))
+image(myb,asp=1,col=gray.colors(50),main="Recovered Image with 2 Scans",xlab="x",ylab="y")
 ```
 
+### Time of Flight vs Path Length
+
+In the special case of the simple 3-tissue phantom we looked for transmitter/receiver lines which went ONLY through silicone, the slowest tissue in the phantom. Such lines have lengths equal to 1000 * their times of flight. These give us information about many pixels, particularly those which contain only silicone.
+
+
+```{r echo=FALSE, fig.align='center',fig.show='hold',fig.width=9}
+source("../R/matrix_utils.R")
+par(mfrow=c(1,1))
+setup <- handySetup(16, 15, 12)
+showSetup(setup)
+myDist <- xmitrcvrDist(setup)
+tof <- scanSetup(setup)
+comp <- cbind(as.vector(tof),as.vector(myDist))
+silirows <- which(comp[,2]==1000*comp[,1])
+res <- matrix(0,0,3)
+for (i in 1:72) res <- rbind(res,getXR_fromRow(silirows[i],setup))
+for (i in 1:72) addPath(res[i,2],res[i,3],setup)
+
+```
+
+Pixels such as (5,7) with only one such special line going through it are interesting because they have a second tissue type in them. Perhaps we can get information about the flight time through this pixel using information from other lines which cross it.
+
+### Removing Stripes
+
+We should be able to eliminate artifactual stripes from a recovered image using information from these special lines. Specifically we can use the actual slowness of each pixel crossed by these lines. The difference between the actual slowness and that given by matrix inversion allows us to remove the stripes.

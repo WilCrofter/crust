@@ -66,8 +66,17 @@ xmitrcvrDist <- function(setup){
         )
   dist
 }
+
+getXR_fromRow <- function(rownumber,setup){
+  X <- (rownumber-1)%%(setup$n-1) + 1
+  R <- floor((rownumber-1)/(setup$n-1))+1
+  ans <- cbind(rownumber,X,R) 
+  ans
+}
+
+
 #given pixel (x,y) find all the xmitr/rcvr pairs that go through it
-getXR <- function(x,y,setup,myS=S){
+getXR_fromPixel <- function(x,y,setup,myS=S){
   XR <- matrix(0,0,3)
   if (x<1 || x>setup$npix) stop("x is out of bounds ",x)
   if (y<1 || y>setup$npix) stop("y is out of bounds ",y)
