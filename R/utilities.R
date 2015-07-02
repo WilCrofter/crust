@@ -234,10 +234,10 @@ segmentLengths <- function(n, m, u, v, spacing, zero_origin=TRUE){
   # Find the coordinates of successive crossings
   crossings <- sapply(lambdas, function(lambda)uprime+lambda*(vprime-uprime))
   # Omit crossings which are exterior to the grid.
-  crossings <- crossings[, !(crossings[1,] < k*spacing) & 
-                           !(crossings[1, ] > (n+k)*spacing) & 
-                           !(crossings[2,] < k*spacing) & 
-                           !(crossings[2,] > (m+k)*spacing)]
+  crossings <- crossings[, !gt(k*spacing,crossings[1,]) &
+                           !gt(crossings[1,],(n+k)*spacing) &
+                           !gt(k*spacing,crossings[2,]) &
+                           !gt(crossings[2,],(m+k)*spacing)  ]
   # Find the lengths of line segments between successive crossings
   temp <- (crossings[1:3,-1]-crossings[1:3, -ncol(crossings)])^2
   if(is.matrix(temp)){
@@ -264,6 +264,19 @@ segmentLengths <- function(n, m, u, v, spacing, zero_origin=TRUE){
   } else {
     return(data.frame(x_index=cells[1], y_index=cells[2], segment_length=lengths))
   }
+}
+
+#returns TRUE if a>b and a!=b within numerical tolerance
+gt <- function(a,b){
+  if(!is.numeric(a) | !is.numeric(b))stop("arguments must both be numeric")
+  if(length(a) != 1 & length(b) != 1)stop("one of the two arguments must be a scalar")
+ 
+  ans <- numeric()
+  for (i in 1:length(a) )
+    for (j in 1:length(b)) {
+      ans <- c(ans, a[i]>b[j] & !isTRUE(all.equal(a[i],b[j])))
+    }
+  ans
 }
 
 plotGrid <- function(n, m, spacing, zero_origin=TRUE, add=FALSE, ...){

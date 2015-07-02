@@ -25,16 +25,28 @@ handySetup <- function(n, z, npix=n-1){
                            alignment_in_world = diag(1,4,4))
   xmitr <- newProbe(n=n, spacing = 30/n)
   rcvr <- newProbe(n=n, spacing = 30/n)
-  align <- alignProbes(phantom, c(15,15,z), c(1,0,0), xmitr, rcvr)
-  list(phantom=phantom, xmitr=xmitr, rcvr=rcvr, align=align, n=n, npix=npix, z=z, 
-       reset_xmitr = xmitr$alignment_in_world, reset_rcvr = rcvr$alignment_in_world)
+  setup <- list(phantom=phantom, xmitr=xmitr, rcvr=rcvr, align=NULL, n=n, npix=npix, z=z)
+  setup <- alignX(setup)
+  setup
+}
+
+alignX <- function(setup){
+  pt <- c(setup$phantom$dimensions[1:2]/2,setup$z)
+  setup$align <- alignProbes(setup$phantom, pt, c(1,0,0), setup$xmitr, setup$rcvr)
+  setup
+}
+
+alignY <- function(setup){
+  pt <- c(setup$phantom$dimensions[1:2]/2,setup$z)
+  setup$align <-alignProbes(setup$phantom, pt, c(0,1,0), setup$xmitr, setup$rcvr)
+  setup
 }
 
 # Create a figure showing the horizontal section, the transmitter and receiver
 # positions, and the grid.
-showSetup <- function(setup){
+showSetup <- function(setup,legends=TRUE){
   plotSectionAndArrays(setup$phantom, setup$align$transmitters, setup$align$receivers,
-                       setup$z, by=ceiling(setup$npix/8), legends=TRUE)
+                       setup$z, by=ceiling(setup$npix/8), legends=legends)
   plotGrid(setup$npix, setup$npix, spacing=30/setup$npix, add=TRUE, col="green")
 }
 
@@ -64,7 +76,8 @@ pixLengths <- function(i, j, setup){
 # Create the Sij matrix by calling pixLengths in double loop
 createSij <- function(setup){
   npix <- setup$npix
-  Sij <- matrix(0,nrow=setup$n*(setup$n-1),ncol=npix^2)
+  numrows <- setup$n*(setup$n-1)
+  Sij <- matrix(0,nrow=numrows,ncol=npix^2)
   for (i in 1:(setup$n-1)) 
     for (j in 1:setup$n){
       row <- pixLengths(i,j,setup)
@@ -74,29 +87,18 @@ createSij <- function(setup){
         Sij[(j-1)*(setup$n-1) + i, idx] <- row$segment_length[k]
         }
     }
+  #now do some checks on Sij
+  rsums <- rowSums(Sij)
+  
+  for (i in 1:numrows) {
+    nz <- sum(Sij[i,]>0)
+    if (nz<npix)stop("too few nonzero elements in row ",i)
+    cl <- floor((i-1)/(setup$n-1))+1
+    rw <- (i-1)%%(setup$n-1) + 1
+    dist <- sqrt((setup$align$transmitters[1,rw]-setup$align$receivers[1,cl])^2 +
+                   (setup$align$transmitters[2,rw]-setup$align$receivers[2,cl])^2 +
+                   (setup$align$transmitters[3,rw]-setup$align$receivers[3,cl])^2)
+    if (!isTRUE(all.equal(dist,rsums[i])))stop("pathlengths not equal in row ",i," ",dist," ",rsums[i])
+  }
   Sij
-}
-
-# Apply the given affine transforms to the current probe positions.
-# For example, to translate a probe 1 mm in the y direction (in world
-# coordinates,) use A_xmitr=affineTransform(u, 0, c(0, 1, 0)) where u is any 3-vector.
-# NOTE, USAGE IS IMPORTANT: Use setup <- adjustProbes(setup, A1, A2)
-# In other words, the result MUST be assigned to the first argument. This is awkward
-# and should be fixed, but for now we're stuck with it. 
-adjustProbes <- function(setup, A_xmitr=diag(1,4,4), A_rcvr=diag(1,4,4)){
-  setup$xmitr$adjustBy(A_xmitr)
-  setup$rcvr$adjustBy(A_rcvr)
-  setup$align <- recalcForScan(setup$phantom, setup$xmitr, setup$rcvr)
-  setup
-}
-
-# Reset probes to their original positions
-# NOTE, USAGE IS IMPORTANT: Use setup <- resetProbes(setup)
-# In other words, the result MUST be assigned to the first argument. This is awkward
-# and should be fixed, but for now we're stuck with it. 
-resetProbes <- function(setup){
-  setup$xmitr$moveTo(setup$reset_xmitr)
-  setup$rcvr$moveTo(setup$reset_rcvr)
-  setup$align <- recalcForScan(setup$phantom, setup$xmitr, setup$rcvr)
-  setup
 }
