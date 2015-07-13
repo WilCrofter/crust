@@ -311,3 +311,47 @@ poissonSolver <- function(S, b = runif(ncol(S)), tof, niter=1){
   }
   b
 }
+
+#' Return a probability distribution for cliques of a simple
+#' kind of 2D graph, assuming nodes can take on discrete values 1,...,n.
+#' In this simple 2D graph, each node (or pixel,) is directly connected
+#' to its horizontal and vertical neighbors only. Thus maximal cliques
+#' (subgraphs in which each node is directly connected to every other)
+#' consist of neighboring pairs.
+#' 
+#' The returned probability distribution is specified by a vector, p,
+#' of marginal probabilities, Pr(1), ..., Pr(n), and a probability, q,
+#' that two nodes in a clique (adjacent pixels) have the same value.
+#' It is necessary that q be at least as large as the sum of the squares
+#' of the Pr(i)'s.
+#' 
+#' @param p a vector of probabilities summing to 1
+#' @param qe a probability that two nodes in a clique have the same value
+#' @return clique probabilites in the form of a symmetric matrix. Its row sums
+#' and column sums will be p. The sum of its diagonal elements will be qe. The
+#' probability of a clique i,j will be its i,jth element.
+simpleCliqueProbs <- function(p, qe){
+  if(!is.numeric(p) | min(p) < 0 | !isTRUE(all.equal(sum(p), 1))){
+    stop("p is not a probability distribution")
+  }
+  if(!is.numeric(qe) | !(length(qe)==1) | qe < 0 | qe > 1){
+    stop("qe is not a probability")
+  }
+  if(qe < sum(p^2)){
+    stop("qe is too small: qe >= sum(p^2) is necessary.")
+  }
+  n <- length(p)
+  ans <- matrix(0,n,n)
+  d <- 1-sum(p^2)
+  q <- 1-(1-qe)/d
+  for(i in 1:n){
+    for(j in 1:n){
+      if(i == j){
+        ans[i,j] <- p[i]*q + p[i]^2*(1-q)
+      } else {
+        ans[i,j] <- (1-q)*p[i]*p[j]
+      }
+    }
+  }
+  ans
+}
