@@ -320,9 +320,9 @@ poissonSolver <- function(S, b = runif(ncol(S)), tof, niter=1){
 #' consist of neighboring pairs.
 #' 
 #' The returned probability distribution is specified by a vector, p,
-#' of marginal probabilities, Pr(1), ..., Pr(n), and a probability, q,
+#' of marginal probabilities, Pr(1), ..., Pr(n), and a probability, qe,
 #' that two nodes in a clique (adjacent pixels) have the same value.
-#' It is necessary that q be at least as large as the sum of the squares
+#' It is necessary that qe be at least as large as the sum of the squares
 #' of the Pr(i)'s.
 #' 
 #' @param p a vector of probabilities summing to 1
@@ -355,3 +355,27 @@ simpleCliqueProbs <- function(p, qe){
   }
   ans
 }
+
+#' For the same kind of graph as in simpleCliqueProbs, given
+#' the values of a node's 2, 3, or 4 neighbors, return the value
+#' of the node which maximizes the likelihood of the 2, 3, or
+#' 4 associated cliques (i.e., the product of their invidual
+#' likelihoods)
+#' 
+#' @param v a 2, 3, or 4-vector of the values of a node's (pixel's) neighbors
+#' @param clique_probs a matrix of clique probabilites as returned by simpleCliqueProbs
+#' @return the maximum likelihood value of the central node 
+simpleCliqueMLV <- function(v, clique_probs){
+  if(!is.numeric(v) | !(length(v) %in% 2:4) | min(v) < 1 | max(v) > nrow(clique_probs)){
+    stop("v should be a 2, 3, or 4-vector with values between 1 and nrow(clique_probs)")
+  }
+  # p[i,j] gives the probability of the clique containing values v[i] and j.
+  p <- clique_probs[v,]
+  # The product of elements in column j of p, gives the probability of all
+  # four cliques given the value, j, for the central node.
+  q <- apply(p, 2, prod)
+  # The index of the maximum value of q gives the maximum likelihood value
+  # for the central node
+  which.max(q)
+}
+
