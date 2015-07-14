@@ -5,6 +5,7 @@ output: html_document
 
 #### Notes in reverse chronological order.
 
+* [Some randomly generated "images"](www/random_images.html)
 * [Summary 7/2/2015](www/summary_2015_7_2.html)
 * [Null space of S and other algebraic characteristics](www/S_kernel_etc.html)
 * [System matrices are ill-conditioned](www/ill_conditioned_S.html)

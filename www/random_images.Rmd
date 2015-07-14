@@ -1,0 +1,55 @@
+---
+title: Some randomly generated "images"
+author: "W. Bauer"
+date: "July 13, 2015"
+output: html_document
+---
+
+```{r echo=FALSE}
+source("../R/utilities.R")
+```
+
+This note is a quick demo of some "images" randomly generated via Markov Random Fields. The point of the exercise is to gauge to what extent local statistics can describe images of the type we expect to see in practice. The relevant functions are in `R/utilities.R`. 
+
+A Markov Random Field (MRF) is a probability distribution on a labeled (or colored) graph, i.e., probabilities that its nodes would acquire certain labels (or colors.) Under mild conditions, the probability of a MRF is the product of the probabilities of its maximal "cliques." A clique is a subgraph in which every node is connected to every other. A maximal clique is one which can't be extended.
+
+If this line of investigation leads anywhere, I'll elaborate in a later note. For the moment, I want to illustrate some MRFs in which pixels (thought of as nodes) are connected to their 4 adjacent pixels. In this case, a clique is 2 adjacent pixels.
+
+Function `simpleCliqueProbs` will generate clique probabilities for such a graph. Given a vector, p, of probabilities of individual node labels (or colors,) and a probability that two adjacent nodes have the same label (color) it returns a matrix whose i,j^th^ element is the probability of two adjacent nodes labeled i and j.
+
+```{r}
+set.seed(1436837359) # system time when coded
+p <- c(0.4, 0.35, 0.25) # individual probabilities of labels 1, 2, and 3
+qe <- 0.75 # probability that two adjacent nodes will have the same label
+m <- simpleCliqueProbs(p, qe)
+m
+```
+
+The row (or column) sums of `m` will be p, i.e., the marginals of the clique probabilities will be the specified probabilities for the labels of individual nodes. 
+```{r}
+rowSums(m)
+```
+
+Them sum of the diagonals of `m` will be the probabilities that two adjacent nodes have the same label.
+
+```{r}
+sum(diag(m))
+```
+
+And the sum of all the elements of `m` will be 1.
+
+```{r}
+sum(m)
+```
+
+Function `randomSimplePix` can use these clique probabilities to generate images from the MRF which they specify. I'll generate a few for illustration.
+
+```{r fig.align='center', fig.show='hold'}
+par(mfrow=c(1,2))
+for(i in 1:8){
+  pix <- randomSimplePix(m, 16, 16)
+  image(pix, asp=1, col=gray.colors(3))
+}
+par(mfrow=c(1,1))
+```
+
