@@ -92,3 +92,33 @@ getXR_fromPixel <- function(x,y,setup,myS=S){
     }
   XR
   }
+
+tryAll <- function(tof){
+  len <- length(tof)
+  maxtry <- 100
+  put <- numeric()
+  stor <- rep(1000,len)
+  old <- numeric()
+  new <- numeric()
+  aidx <- matrix(0,len,3)
+  tof <- tof*maxtry
+  c_silicone <- 1000.0 # m/sec
+  c_alcohol <- 1180.0 # m/sec (ethyl alcohol)
+  c_water <- 1480.0 # m/sec
+  for (i in 0:maxtry){
+    for (j in 0:(maxtry-i)){
+      k <- maxtry-i-j
+      put <- rep(c_silicone*i + c_alcohol*j + c_water*k,len)
+      old <- abs(tof-stor)
+      new <- abs(tof-put )
+      for (idx in 1:len) 
+        if (new[idx]<old[idx]) {
+        stor[idx] <- put[idx]
+        aidx[idx,1] <- i
+        aidx[idx,2] <- j
+        aidx[idx,3] <- k
+    }
+  }
+  }
+  list(best=stor,indx=aidx)
+}
