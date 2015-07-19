@@ -1,0 +1,20 @@
+---
+title: "Writing system matrix utilities"
+author: "W. Bauer"
+date: "July 19, 2015"
+output: html_document
+---
+
+This is a design document for utilities to facilitate study of the system matrix, which is known to have a non-zero kernel, even in favorable configurations.
+
+The basic setup will be a pixelated test image consisting of a matrix of slowness (reciprocal speed of sound) values. R allows objects such as matrices to have attributes. Pixel size in mm is a useful attribute for a test image.
+
+```{r}
+source("../R/system_matrix_utils.R")
+
+```
+
+
+In R's default function for displaying images, rows index the x dimension from left to right, and columns index the y dimension from bottom to top. 
+
+Reference: [Nebeker and Nelson](http://www.jultrasoundmed.org/content/31/9/1389.full) "Mean values from published sound speed reports are as follows: fat, 1478 m/s; glandular breast, 1510 m/s; benign breast tumors, 1513 m/s; and malignant breast tumors, 1548 m/s"
