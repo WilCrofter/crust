@@ -32,6 +32,53 @@ gridOverlay <- function(test_image, col="lightblue", lwd=2, ...){
            col=col, lwd=lwd, ...)
 }
 
+# Return the y coordinates of n transducers aligned at the left and right
+# of a test image.
+#
+# The transducer array will span the image vertically from the middle
+# of the bottom pixel to the middle of the top pixel. In the real world,
+# of course, transducer spacing will be fixed and pixels chosen for
+# analytic convenience. The convention used here is an artifice suited
+# to abstract analysis of system matrices.
+probeYs <- function(n, test_image){
+  if(!is(test_image, "test image"))stop("Argument is not a test image.")
+  if(!is.numeric(n) | length(n) != 1)stop("Argument, n, is not a numerical scalar.")
+  spacing <- attr(test_image,"spacing") # pixel spacing
+  height <- ncol(test_image)*spacing    # columns index the y dimension
+  ys <- seq(spacing/2, height-spacing/2, length.out = n)
+  attr(ys, "class") <- c("probe ys", attr(ys, "class"))
+  ys
+}
+
+# Overlay probe positions on a plot of a test image
+probeOverlay <- function(probe_ys, test_image, col = c("green3", "red"), pch=19, ...){
+  if(!is(probe_ys, "probe ys"))stop("First argument is not an object of class 'probe ys'")
+  if(!is(test_image, "test image"))stop("Second argument is not a test image.")
+  n <- length(probe_ys)
+  spacing <- attr(test_image, "spacing")
+  width <- nrow(test_image)*attr(test_image, "spacing")
+  points(rep(-spacing/2,n), probe_ys-spacing/2, col=head(col,1), pch=pch, ...)
+  points(rep(width-spacing/2, n), probe_ys-spacing/2, col=tail(col,1), pch=pch, ...)
+}
+
+# Overlay a transmitter-to-receiver path on a plot of a test image
+pathOverlay <- function(probe_ys, test_image, transmitter, receiver, col="black", lwd=2, ...){
+  if(!is(probe_ys, "probe ys"))stop("First argument is not an object of class 'probe ys'")
+  if(!is(test_image, "test image"))stop("Second argument is not a test image.")
+  n <- length(probe_ys)
+  if(!is.numeric(transmitter) | !(length(transmitter)==1) |
+     !(transmitter > 0) | ! transmitter <= n)stop(
+    paste("Argument 'transmitter' must be an integer between 1 and ", n))
+  if(!is.numeric(receiver) | !(length(receiver)==1) |
+     !(receiver > 0) | !(receiver <= n))stop(
+    paste("Argument 'receiver' must be an integer between 1 and ", n))
+  delta <- attr(test_image, "spacing")/2 # for plot
+  y1 <- probe_ys[round(transmitter)]
+  y2 <- probe_ys[round(receiver)]
+  width <- nrow(test_image)*attr(test_image, "spacing")
+  segments(-delta, y1+delta, width-delta, y2+delta, col=col, lwd=lwd, ...)
+}
+
 # Representative values for speeds of sound in tissues of interest
 # Reference: 
 # [Nebeker and Nelson](http://www.jultrasoundmed.org/content/31/9/1389.full) 

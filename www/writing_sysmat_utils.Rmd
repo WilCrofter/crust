@@ -5,7 +5,7 @@ date: "July 19, 2015"
 output: html_document
 ---
 
-This is a design document for utilities to facilitate study of the system matrix, which is known to have a non-zero kernel, even in favorable configurations.
+This is a design document for utilities pertaining to analysis of system matrices, which are known to have non-zero kernels, even in favorable configurations.
 
 The basic setup will be a pixelated test image consisting of a matrix of slowness (reciprocal speed of sound) values. R allows objects such as matrices to have attributes. Function `testImage` creates a matrix with attributes, `spacing`, for pixel spacing (dimension of a side in mm,) and `slowness` for the default value of slowness in a pixel. If slowness is not specified, `1/1500` mm/ms is used.
 
@@ -26,10 +26,31 @@ img[4:8, 8:24] <- 1/speed["gland"]
 
 In R's default function for displaying images, rows index the x dimension from left to right, and columns index the y dimension from bottom to top. Thus, the "gland" occupies a rectangle at the vertical center on the left of the image. Function `gridOverlay` plots grid lines over the image.
 
-```{r fig.align='center', fig.width=4.4}
+```{r fig.align='center', fig.width=4.5}
 tix <- (0:31)*attr(img,"spacing")
-image(tix, tix, img, asp=ncol(img)/nrow(img), main="Test image with 'gland'\nand overlay", col=c("blue", "gray"), xlab="x (mm)", ylab="y (mm)")
+image(tix, tix, img, asp=ncol(img)/nrow(img), main="Test image with 'gland'\nand grid overlay", col=c("blue", "gray"), xlab="x (mm)", ylab="y (mm)")
 gridOverlay(img)
 ```
 
-A probe is represented by an array of equally spaced transducers. Its alignment is specified in the coordinate system of an associated test image. ??allow z??
+For present purposes it's sufficient that probes be aligned at the left and right boundaries of a test image, and that they span the image vertically. Transducer y coordinates will thus be the same for both probes, and will be determined by the number of transducers per probe. Function `probeYs` calculates them.
+
+```{r}
+ys <- probeYs(32, img)
+```
+
+Function `probeOverlay` will plot transducer positions on the active plot of a test image.
+
+```{r fig.align='center', fig.width=4.5}
+image(tix, tix, img, asp=ncol(img)/nrow(img), main="Test image with 'gland'\nand probe overlay", col=c("blue", "gray"), xlab="x (mm)", ylab="y (mm)")
+probeOverlay(ys, img)
+```
+
+Function `pathOverlay` will plot a transmitter-to-receiver path on the active plot of a test image.
+
+```{r fig.align='center', fig.width=4.5}
+image(tix, tix, img, asp=ncol(img)/nrow(img), main="Test image with 'gland'\nand all overlays", col=c("blue", "gray"), xlab="x (mm)", ylab="y (mm)")
+gridOverlay(img)
+probeOverlay(ys, img)
+pathOverlay(ys, img, transmitter = 3, receiver = 25)
+```
+
