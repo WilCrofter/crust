@@ -11,7 +11,7 @@ The basic setup will be a pixelated test image consisting of a matrix of slownes
 
 ```{r}
 source("../R/system_matrix_utils.R")
-img <- testImage(32, 32, 1)
+img <- testImage(32, 32, 1.25)
 ```
 
 Representative speeds of sound in tissues of interest are given in the vector, `speed`. Available speeds are `r names(speed)`.
@@ -54,3 +54,50 @@ probeOverlay(ys, img)
 pathOverlay(ys, img, transmitter = 3, receiver = 25)
 ```
 
+Finally, function `sysMat(probe_ys, test_image, check=FALSE, MatrixPackage=FALSE)` will return a system matrix (or Matrix if MatrixPackage=TRUE) for the given probe coordinates and test image. If the `check` parameter is `TRUE`, entries will be checked to ensure that segment lengths along a path sum to the distance between the associated transmitter and receiver. Function `sysMat` is a rewrite of function `createSij`.
+
+The default invocation of `sysMat` will return an ordinary R (lower case m) matrix. Warning: it will take some time to execute.
+
+```{r eval=FALSE}
+S <- sysMat(ys, img)
+```
+
+Setting parameter `MatrixPackage=TRUE` causes a (upper case M) Matrix from the associated package to be returned. These objects are advantageous for handling sparse matrices.
+
+```{r eval=FALSE}
+library(Matrix)
+S <- sysMat(ys, img, MatrixPackage = TRUE)
+```
+
+Setting parameter `check = TRUE` checks that path segments sum to the proper path length, hence that no line segments have been dropped due to precision problems.
+
+```{r eval = FALSE}
+# For a Matrix:
+S <- sysMat(ys, img, MatrixPackage = TRUE, check=TRUE)
+# For a matrix:
+S <- sysMat(ys, img, check=TRUE)
+```
+
+As [shown earlier,](S_kernel_etc.html) system matrices will always have certain, stylized null vectors. Solutions, $b$, to $Sb \appox \tau$ will thus never be unique. Since the stylized null vectors can result in vertical stripes, I'll call the space of stylized null vectors, the *stripe space.* Though the kernel of $S$ may be strictly larger than the stripe space, the orthogonal complement of the stripe space is of interest.
+
+The orthogonal complement of the stripe space corresponds to images such that the sum of values in each column of pixels is the same for every column. For instance, the following image has the value `1/speed["fat"]` (light) in one row of each column and the default value, `1/1500` (dark) in the others:
+
+```{r fig.align='center', fig.width=6}
+orthogimg <- testImage(12, 8, 2.25)
+set.seed(1437528807)
+for(i in 1:12)orthogimg[i, sample(8,1)] <- 1/speed["fat"]
+image((1:12)*2.25, (1:8)*2.25, orthogimg, asp=1, xlab="x (mm)", ylab="y (mm)",
+      main="Typical vector orthogonal to stripe space", col=gray.colors(2))
+```
+
+Pixel columns, in R, correspond to the y dimension, equivalently to the rows of the matrix which contains the image. Hence the row sums of `orthogimg` will be equal.
+
+```{r}
+rowSums(orthogimg)
+```
+
+Restricting solutions to the orthogonal complement of the stripe space may be a good idea. Real images, of course, will not have the same sum in every pixel column, so such solutions will be incorrect, but will at least be unique in cases for which the stripe space is the entire kernel. It would then remain to remove stripe artifacts from the solution.
+
+It is easy to specify a basis for the orthogonal complement of the stripe space. If the columns of $B$ are such a basis, solving $SBu \approx \tau$ for $u$ and letting $b = Bu$ would restrict solutions to the orthogonal complement.
+
+A basis such that for any pair of basis vectors, $v$ and $w$, $Sv$ and $Sv$ are orthogonal, i.e. $Sv \bullet Sw = 0,$ would be particularly useful since, then, the solution is a series of single variable optimizations, one for each vector. This is the principle behind optimization by conjugate gradient for instance.

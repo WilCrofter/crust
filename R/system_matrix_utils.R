@@ -88,32 +88,48 @@ pathOverlay <- function(probe_ys, test_image, transmitter, receiver, col="black"
 speed <- c(fat=1478, gland=1510, benign=1513, malignant=1548, 
            silicone=1000, alcohol=1180, water=1480)
 
-# Modifies createSij to work independently of handy scanner.
-formSij <- function(setup){
-  npix <- setup$npix
-  numrows <- setup$n*(setup$n-1)
-  Sij <- matrix(0,nrow=numrows,ncol=npix^2)
-  for (i in 1:(setup$n-1)) 
-    for (j in 1:setup$n){
-      row <- pixLengths(i,j,setup)
-      for (k in 1:length(row$segment_length)) {
-        idx <- (row$y_index[k]-1) * npix + row$x_index[k]
-        # Sij[(i-1)*setup$n + j,idx] <- row$segment_length[k]
-        Sij[(j-1)*(setup$n-1) + i, idx] <- row$segment_length[k]
+# Returns a system matrix, or Matrix, for the given probe positions and test image.
+# If parameter 'check' is TRUE, entries will be checked to ensure they sum to
+# appropriate path lengths, i.e., that no pixels were missed due to precision issues.
+# If paramter 'MatrixPackage' is TRUE, the returned object will be a Matrix
+# from the package of the same name, which is advantageous in the case of large,
+# sparse matrices. Otherwise, an ordinary R matrix will be returned.
+sysMat <- function(probe_ys, test_image, check=FALSE, MatrixPackage=FALSE){
+  if(!is(probe_ys, "probe ys"))stop("First argument is not an object of class 'probe ys'")
+  if(!is(test_image, "test image"))stop("Second argument is not a test image.")
+  if(MatrixPackage & is(try(find.package("Matrix"), silent=TRUE),"try-error")){
+    if(is(err, "try-error")){
+      stop("Argument MatrixPackage is TRUE, but the Matrix package is not installed.")
+    } else {
+      library(Matrix)
+    }
+  }
+  spacing <- attr(test_image, "spacing")
+  nprobe <- length(probe_ys)
+  nx <- nrow(test_image)
+  ny <- ncol(test_image)
+  npix <- nx*ny
+  x0 <- 0
+  x1 <- nx*spacing
+  S <- if(MatrixPackage){
+    Matrix(0, nrow=nprobe^2, ncol=npix)
+  } else {
+    matrix(0, nrow=nprobe^2, ncol=npix)
+  }
+  for (i in 1:nprobe) 
+    for (j in 1:nprobe){
+      u <- c(x0, probe_ys[i], 0)
+      v <- c(x1, probe_ys[j], 0)
+      segs <- segmentLengths(nx, ny, u, v, spacing, zero_origin=TRUE)
+      if(check & 
+         !isTRUE(all.equal(sum(segs[,"segment_length"]), 
+                           sqrt(x1^2 + (v[2]-u[2])^2)))){
+        stop(paste("Line segment(s) missing in path",i, j))
+      }
+      for (k in 1:length(segs$segment_length)) {
+        idx <- (segs$y_index[k]-1) * nx + segs$x_index[k]
+        S[(j-1)*nprobe + i, idx] <- segs$segment_length[k]
       }
     }
-  #now do some checks on Sij
-  rsums <- rowSums(Sij)
-  
-  for (i in 1:numrows) {
-    nz <- sum(Sij[i,]>0)
-    if (nz<npix)stop("too few nonzero elements in row ",i)
-    cl <- floor((i-1)/(setup$n-1))+1
-    rw <- (i-1)%%(setup$n-1) + 1
-    dist <- sqrt((setup$align$transmitters[1,rw]-setup$align$receivers[1,cl])^2 +
-                   (setup$align$transmitters[2,rw]-setup$align$receivers[2,cl])^2 +
-                   (setup$align$transmitters[3,rw]-setup$align$receivers[3,cl])^2)
-    if (!isTRUE(all.equal(dist,rsums[i])))stop("pathlengths not equal in row ",i," ",dist," ",rsums[i])
-  }
-  Sij
+  S
 }
