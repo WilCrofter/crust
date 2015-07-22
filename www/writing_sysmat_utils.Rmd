@@ -7,6 +7,8 @@ output: html_document
 
 This is a design document for utilities pertaining to analysis of system matrices, which are known to have non-zero kernels, even in favorable configurations.
 
+### Utilities
+
 The basic setup will be a pixelated test image consisting of a matrix of slowness (reciprocal speed of sound) values. R allows objects such as matrices to have attributes. Function `testImage` creates a matrix with attributes, `spacing`, for pixel spacing (dimension of a side in mm,) and `slowness` for the default value of slowness in a pixel. If slowness is not specified, `1/1500` mm/ms is used.
 
 ```{r}
@@ -78,9 +80,17 @@ S <- sysMat(ys, img, MatrixPackage = TRUE, check=TRUE)
 S <- sysMat(ys, img, check=TRUE)
 ```
 
+### Scanning and image reconstruction
+
+Scanning an image is a matter of matrix multiplication. The test image must first be converted to a vector.
+
+```{r eval=FALSE}
+tau <- S %*% as.vector(img) # tau is times of flight
+```
+
 As [shown earlier,](S_kernel_etc.html) system matrices will always have certain, stylized null vectors. Solutions, $b$, to $Sb \appox \tau$ will thus never be unique. Since the stylized null vectors can result in vertical stripes, I'll call the space of stylized null vectors, the *stripe space.* Though the kernel of $S$ may be strictly larger than the stripe space, the orthogonal complement of the stripe space is of interest.
 
-The orthogonal complement of the stripe space corresponds to images such that the sum of values in each column of pixels is the same for every column. For instance, the following image has the value `1/speed["fat"]` (light) in one row of each column and the default value, `1/1500` (dark) in the others:
+The orthogonal complement of the stripe space corresponds to images in which the sum of values in each column of pixels is the same for every column. For instance, the following image has the value `1/speed["fat"]` (light) in one pixel of each column and the default value, `1/1500` (dark) in the others:
 
 ```{r fig.align='center', fig.width=6}
 orthogimg <- testImage(12, 8, 2.25)
@@ -90,7 +100,7 @@ image((1:12)*2.25, (1:8)*2.25, orthogimg, asp=1, xlab="x (mm)", ylab="y (mm)",
       main="Typical vector orthogonal to stripe space", col=gray.colors(2))
 ```
 
-Pixel columns, in R, correspond to the y dimension, equivalently to the rows of the matrix which contains the image. Hence the row sums of `orthogimg` will be equal.
+In R, pixel columns correspond to the y dimension, equivalently to the rows of the matrix which contains the image. Hence the row sums of `orthogimg` will be equal.
 
 ```{r}
 rowSums(orthogimg)
