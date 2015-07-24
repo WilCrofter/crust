@@ -17,18 +17,26 @@ testImage <- function(nrows, ncols, spacing, slowness=1/1500){
   img
 }
 
+# Plot a test image. Use this function for compatibility with overlay functions.
+plotTestImage <- function(test_image, col=rainbow(length(unique(test_image))), ...){
+  spacing <- attr(test_image, "spacing")
+  nr <- nrow(test_image)
+  nc <- ncol(test_image)
+  image((0:nr)*spacing, (0:nc)*spacing, test_image, asp=1, col=col, 
+        xlab="x (mm)", ylab="y (mm)", ...)
+}
+
 # Overlay grid lines on a plot of a test image
 gridOverlay <- function(test_image, col="lightblue", lwd=2, ...){
   if(!is(test_image, "test image"))stop("Argument is not a test image.")
   spacing <- attr(test_image, "spacing")
-  oset <- -.5*spacing
-  xmax <- spacing*(nrow(test_image)-.5)
-  xgrids <- seq(oset, xmax, by=spacing)
-  ymax <- spacing*(ncol(test_image)-.5)
-  ygrids <- seq(oset, ymax, by=spacing)
-  segments(xgrids, rep(oset,nrow(test_image)), xgrids, rep(ymax, nrow(test_image)),
+  xmax <- spacing*(nrow(test_image))
+  xgrids <- seq(0, xmax, by=spacing)
+  ymax <- spacing*(ncol(test_image))
+  ygrids <- seq(0, ymax, by=spacing)
+  segments(xgrids, rep(0,nrow(test_image)), xgrids, rep(ymax, nrow(test_image)),
            col=col, lwd=lwd, ...)
-  segments(rep(oset,ncol(test_image)), ygrids, rep(xmax, ncol(test_image)), ygrids,
+  segments(rep(0,ncol(test_image)), ygrids, rep(xmax, ncol(test_image)), ygrids,
            col=col, lwd=lwd, ...)
 }
 
@@ -55,10 +63,9 @@ probeOverlay <- function(probe_ys, test_image, col = c("green3", "red"), pch=19,
   if(!is(probe_ys, "probe ys"))stop("First argument is not an object of class 'probe ys'")
   if(!is(test_image, "test image"))stop("Second argument is not a test image.")
   n <- length(probe_ys)
-  spacing <- attr(test_image, "spacing")
   width <- nrow(test_image)*attr(test_image, "spacing")
-  points(rep(-spacing/2,n), probe_ys-spacing/2, col=head(col,1), pch=pch, ...)
-  points(rep(width-spacing/2, n), probe_ys-spacing/2, col=tail(col,1), pch=pch, ...)
+  points(rep(0,n), probe_ys, col=head(col,1), pch=pch, ...)
+  points(rep(width, n), probe_ys, col=tail(col,1), pch=pch, ...)
 }
 
 # Overlay a transmitter-to-receiver path on a plot of a test image
@@ -72,11 +79,10 @@ pathOverlay <- function(probe_ys, test_image, transmitter, receiver, col="black"
   if(!is.numeric(receiver) | !(length(receiver)==1) |
      !(receiver > 0) | !(receiver <= n))stop(
     paste("Argument 'receiver' must be an integer between 1 and ", n))
-  delta <- attr(test_image, "spacing")/2 # for plot
   y1 <- probe_ys[round(transmitter)]
   y2 <- probe_ys[round(receiver)]
   width <- nrow(test_image)*attr(test_image, "spacing")
-  segments(-delta, y1+delta, width-delta, y2+delta, col=col, lwd=lwd, ...)
+  segments(0, y1, width, y2, col=col, lwd=lwd, ...)
 }
 
 # Representative values for speeds of sound in tissues of interest
