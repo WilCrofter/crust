@@ -18,11 +18,11 @@ testImage <- function(nrows, ncols, spacing, slowness=1/1500){
 }
 
 # Plot a test image. Use this function for compatibility with overlay functions.
-plotTestImage <- function(test_image, col=rainbow(length(unique(test_image))), ...){
+plotTestImage <- function(test_image, ...){
   spacing <- attr(test_image, "spacing")
   nr <- nrow(test_image)
   nc <- ncol(test_image)
-  image((0:nr)*spacing, (0:nc)*spacing, test_image, asp=1, col=col, 
+  image((0:nr)*spacing, (0:nc)*spacing, test_image, asp=1,
         xlab="x (mm)", ylab="y (mm)", ...)
 }
 
