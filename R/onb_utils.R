@@ -1,25 +1,22 @@
-#' Utilities related to the inner product <u, v> = t(Su)Sv on the orthogonal
-#' complement of the kernel of S, which we abbreviate here as S-perp.
+#' Utilities related to the inner product <u,v> = t(Su)Sv on the orthogonal
+#' complement of the kernel of S.
 #' 
 #' Sets of vectors which are orthonormal with respect to this inner product may be
 #' useful for analysis of system matrices and the potential for image recovery in
 #' co-robotic ultrasound tomography. If U is such an orthonormal set, then the
-#' least squares solution to Sb ~ tau in U is just the sum of the projections of
-#' t(S)tau on the members of U, where the projection on u is just <t(S)tau, u>u.
+#' least squares solution to Sb ~ tau in the span of U is just the sum of the 
+#' projections of t(S)tau on the members of U, where the projection on u is just 
+#' <t(S)tau,u>*u. Since it is a subspace of all possible images, the minimum over
+#' the span of U is not likely to be a global minimum. However, it will be unique. 
+#' In fact, it is easily shown that the span of U is in the orthogonal complement
+#' of the kernel of S, hence the minimum on the span of U is the projection of all
+#' global minima. 
 #' 
-#' Ker(S) includes, though is not necessarily limited to, the so-called stripe space.
+#' The kernel of S includes, though is not necessarily limited to, the so-called stripe space.
 #' The stripe space consists of images (i.e., their associated vectors) such that
 #' each row of pixels is identical, and the sum of values in a row is zero. The
 #' orthogonal complement of the stripe space consists of images such that each
-#' column of pixels sums to the same value as every other. We'll abbreviate this
-#' space as stripe-perp.
-#' 
-#' It appears true, though has not been proven, that if the transducer-to-pixel
-#' ratio is large enough, ker(S) consists of the stripe space alone. Thus, it
-#' seems to make sense to form orthonormal sequences, u1, u2, u3, ..., in
-#' stripe-perp such that shorter subsequences divide the image into cruder
-#' blocks of pixels than do longer subsequences. These utilities are meant to
-#' facilitate that.
+#' column of pixels sums to the same value as every other.
 
 #' inner product with respect to S
 inner <- function(u, S, v){
@@ -38,10 +35,11 @@ eunorm <- function(u, S)sqrt(sum((S %*% as.vector(u))^2))
 #' Given a matrix, U, whose columns are orthonormal in the inner product
 #' associated with S, return a vector v, orthonormal to the columns of U,
 #' such that the span of v and the columns of U includes b.
-extend <- function(b, S, U=NULL){
-  if(is.null(U))return(as.vector(b)/eunorm(b))
+extendONS <- function(b, S, U=NULL){
+  if(is.null(U))return(as.vector(b)/eunorm(b, S))
+  if(is.vector(U))dim(U)<- c(length(U), 1)
   # find the residual of the projection of b on the column space of U.
-  ans <- b - U %*% inner(U, S, b)
+  ans <- as.vector(b) - U %*% inner(U, S, b)
   # return its normalized value
-  ans/eunorm(ans)
+  ans/eunorm(ans, S)
 }

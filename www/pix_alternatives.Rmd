@@ -1,0 +1,16 @@
+---
+title: "Alternatives to pixel bases"
+author: "W. Bauer"
+date: "July 26, 2015"
+output: html_document
+---
+
+If $S$ is a system matrix, a least squares solution, $b$, to $Sb \approx \tau,$ involves minimization of the quadratic form, $b^TS^TSb - 2b^TS^T\tau.$ The quadratic term regarded as an inner product, $\langle u, v\rangle \doteq b^TS^TSb,$ is of interest in this connection. If $U$ is a set of vectors which are orthonormal with respect to this inner product, i.e., is "S-orthonormal," ,then$$b = \sum_{u \in U} \langle S^T\tau, u \rangle u$$minimizes the quadratic form on the span of $U$.
+
+System matrices are known to have non-zero kernels, so a least squares solution over all possible images will not be unique. (Adding a member of the kernel to a solution will not change the value of the quadratic form.) On the other hand, minimization over the span of an S-orthornormal set, $U$, will be unique but may not achieve the global minimum. A system matrix does not contain enough information to uniquely recover an image. However, it is clear that a system matrix contains significant information, and it remains to be seen what can be recovered using the system matrix alone.
+
+If $U$ is an S-orthonormal set, then the span of $U$ cannot intersect the kernel of S except in the zero vector. This is easily shown. Suppose $z$ is in the span of $U$, and $Sz=0.$ Then, by orthonormality and the definition of span,$$z = \sum_{u \in U}\langle z, u\rangle u.$$But $Sz=0$ implies $u^TS^TSz = \langle u, z \rangle = 0$ for all $u \in U$, hence $z = 0.$
+
+The kernel of $S$ includes, though is not necessarily limited to, the so-called [stripe space](S_kernel_etc.Rmd). The stripe space consists of images (i.e., their associated vectors) such that each row of pixels is identical, and the sum of values in a row is zero. The orthogonal complement of the stripe space consists of images such that each column of pixels sums to the same value as every other.
+
+Since the orthogonal complement of the stripe space can be characterized,  
