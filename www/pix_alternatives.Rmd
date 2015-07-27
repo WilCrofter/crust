@@ -1,16 +1,87 @@
 ---
-title: "Alternatives to pixel bases"
+title: "S-Orthonormal image bases"
 author: "W. Bauer"
 date: "July 26, 2015"
 output: html_document
 ---
 
-If $S$ is a system matrix, a least squares solution, $b$, to $Sb \approx \tau,$ involves minimization of the quadratic form, $b^TS^TSb - 2b^TS^T\tau.$ The quadratic term regarded as an inner product, $\langle u, v\rangle \doteq b^TS^TSb,$ is of interest in this connection. If $U$ is a set of vectors which are orthonormal with respect to this inner product, i.e., is "S-orthonormal," ,then$$b = \sum_{u \in U} \langle S^T\tau, u \rangle u$$minimizes the quadratic form on the span of $U$.
+### Theory
 
-System matrices are known to have non-zero kernels, so a least squares solution over all possible images will not be unique. (Adding a member of the kernel to a solution will not change the value of the quadratic form.) On the other hand, minimization over the span of an S-orthornormal set, $U$, will be unique but may not achieve the global minimum. A system matrix does not contain enough information to uniquely recover an image. However, it is clear that a system matrix contains significant information, and it remains to be seen what can be recovered using the system matrix alone.
+If $S$ is a system matrix, a least squares solution, $b$, to $Sb \approx \tau,$ involves minimization of the quadratic form, $$q(b) = b^TS^TSb - 2b^TS^T\tau.\:\:\:\:(I)$$ The quadratic term regarded as an inner product, $\langle u, v\rangle \doteq b^TS^TSb,$ is of interest in this connection. If $U$ is a set of vectors which are orthonormal with respect to this inner product, then$$b = \sum_{u \in U} \langle S^T\tau, u \rangle u$$minimizes the quadratic form on the span of $U$. This is easily shown, for if $b = \sum_{u \in U} \alpha_u u,$ then by orthonormality,$$q(b) = \sum_{u \in U} \alpha_u^2 - 2\alpha_u \langle S^T\tau, u \rangle.$$Setting derivatives with respect to the $\alpha_u$ to zero proves the claim.
+
+For brevity, I'll refer to orthonormality with respect to the above inner product, as "S-orthonormality."
+
+System matrices are known to have non-zero kernels, so a least squares solution over all possible images will not be unique. (Adding a member of the kernel to a solution will not change the value of the quadratic form.) A system matrix, in other words, does not contain enough information to uniquely recover an image. On the other hand, it is clear that a system matrix contains significant information, and it remains to be seen what can be recovered using the system matrix alone. In this respect, minimization over the span of an S-orthornormal set could be a useful analytic tool. Though such minima may not achieve a global minimum, they will be unique.  
 
 If $U$ is an S-orthonormal set, then the span of $U$ cannot intersect the kernel of S except in the zero vector. This is easily shown. Suppose $z$ is in the span of $U$, and $Sz=0.$ Then, by orthonormality and the definition of span,$$z = \sum_{u \in U}\langle z, u\rangle u.$$But $Sz=0$ implies $u^TS^TSz = \langle u, z \rangle = 0$ for all $u \in U$, hence $z = 0.$
 
-The kernel of $S$ includes, though is not necessarily limited to, the so-called [stripe space](S_kernel_etc.Rmd). The stripe space consists of images (i.e., their associated vectors) such that each row of pixels is identical, and the sum of values in a row is zero. The orthogonal complement of the stripe space consists of images such that each column of pixels sums to the same value as every other.
+The kernel of $S$ includes, though is not necessarily limited to, the so-called [stripe space](S_kernel_etc.Rmd). The stripe space consists of images (i.e., their associated vectors) such that each row of pixels is identical, and the sum of values in a row is zero. The orthogonal complement of the stripe space, consists of images such that each column of pixels sum to exactly the same value as every other. Equivalently, column means will all be the same.
 
-Since the orthogonal complement of the stripe space can be characterized,  
+Only in trivial cases, such as that of uniform tissue, would each column of pixels sum to the same value. However, solutions to $Sb \approx \tau$ with this known fault are of interest, especially if it is their sole fault. It seems likely this can be guaranteed by selecting S-orthonormal subsets which group pixels into relatively large blocks. This would, in effect, reduce the pixel-to-transducer ratio, and there is empirical evidence that a small pixel-to-transducer ratio reduces the kernel to the unavoidable stripe space.
+
+### Example
+
+The following example, though contrived, hopefully suggests that S-orthonormality could prove valuable. I'll first create a 16x16 pixel test image consisting of fat, gland, and a small (1 pixel) malignancy.
+
+```{r fig.align='center', fig.show='hold', fig.width=4.4}
+source("../R/system_matrix_utils.R")
+# base image, all fat
+img <- testImage(16, 16, spacing=2, slowness=1/speed["fat"])
+# insert gland
+img[2:4, 2:12] <- 1/speed["gland"]
+# insert malignancy
+img[14, 14] <- 1/speed["malignant"]
+# display
+plotTestImage(img, col=c("red", "lightblue", "lightyellow"))
+legend(15, 12, c("malignancy", "gland", "fat"), fill = c("red", "lightblue", "lightyellow"))
+```
+
+I'll align "probes" of 16 transducers each at the right and left boundaries of this image, derive an associated system matrix, and perform a "scan" by applying the system matrix to the image. 
+
+```{r}
+# calculate y positions of probes
+ys <- probeYs(16, img)
+# derive associated system matrix
+S <- sysMat(ys, img)
+# apply S to the test image to calculate times of flight
+tau <- S %*% as.vector(img)
+```
+
+Using utilities recently written for the purpose, I'll form an S-orthonormal set from two basis images. The first will be an image of all 1's. The second will be an image with 1 in the pixel which contains the malignancy, and -1 in the y=0 position of the same pixel column. This choice is obviously contrived.
+
+Note that both basis images are in the orthogonal complement of the stripe space--each column of pixels has the same sum, 16 in the first case, 0 in the second.
+
+```{r}
+# load the "orthonomal basis" utilities, onb_utils.R
+source("../R/onb_utils.R")
+# create the constant image, u1
+u1 <- testImage(16, 16, spacing=2, slowness=1)
+# create an image of all zeros
+u2 <- testImage(16, 16, spacing=2, slowness=0)
+# put a 1 in the malignancy pixel
+u2[14, 14] <- 1
+# and a -1 in the same pixel column (equivalently the same matrix row)
+u2[14, 1] <- -1
+# form an othonormal set based on the first image alone. This will just
+# be u1 itself, suitably normalized.
+U <- extendONS(u1, S)
+# extend U so that its span includes u2: 
+U <- extendONS(u2, S, U)
+# verify S-orthonormality
+inner(U, S, U)
+```
+
+Using a utility written for the purpose, I'll minimize the quadratic form (I) on the span of $U.$ (The result will, of course, be far from a global minimum.)
+
+```{r}
+minU <- project(t(S) %*% tau, S, U)
+```
+
+The returned object, `minU`, is a vector of length 16*16. For display it can be converted to a test image, i.e, a 16x16 matrix with some added attributes such as "spacing".
+
+```{r fig.align='center', fig.width=4.4}
+recovered <- as.testImage(matrix(minU, 16, 16), spacing=2)
+plotTestImage(recovered, col=c("black", "lightyellow", "red"), main="Image recovered by projection on\nan S-orthogonal basis of dimension 2.")
+```
+
+The malignancy is clearly visible. I have, of course, cheated by using prior information as to where it is located. Moreover, the gland is nowhere in sight, and there is an artifact shown in black. The example is, admittedly, more sensational than informative. It does, however, suggest the possibility of high-resolution focus in one area (the malignancy) at the expense of others (the gland.)  

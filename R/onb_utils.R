@@ -1,12 +1,12 @@
 #' Utilities related to the inner product <u,v> = t(Su)Sv on the orthogonal
 #' complement of the kernel of S.
 #' 
-#' Sets of vectors which are orthonormal with respect to this inner product may be
-#' useful for analysis of system matrices and the potential for image recovery in
-#' co-robotic ultrasound tomography. If U is such an orthonormal set, then the
-#' least squares solution to Sb ~ tau in the span of U is just the sum of the 
-#' projections of t(S)tau on the members of U, where the projection on u is just 
-#' <t(S)tau,u>*u. Since it is a subspace of all possible images, the minimum over
+#' Sets of vectors which are orthonormal with respect to this inner product,
+#' i.e., "S-orthonormal," may be useful for analysis of system matrices and 
+#' the potential for image recovery in co-robotic ultrasound tomography. If U 
+#' is such an orthonormal set, then the least squares solution to Sb ~ tau in 
+#' the span of U is just the sum of the "S-projections" of t(S)tau on the members 
+#' of U, where the S-projection on u is just <t(S)tau,u>*u. Since it is a subspace of all possible images, the minimum over
 #' the span of U is not likely to be a global minimum. However, it will be unique. 
 #' In fact, it is easily shown that the span of U is in the orthogonal complement
 #' of the kernel of S, hence the minimum on the span of U is the projection of all
@@ -33,13 +33,21 @@ inner <- function(u, S, v){
 eunorm <- function(u, S)sqrt(sum((S %*% as.vector(u))^2))
 
 #' Given a matrix, U, whose columns are orthonormal in the inner product
-#' associated with S, return a vector v, orthonormal to the columns of U,
-#' such that the span of v and the columns of U includes b.
+#' associated with S, derive a vector v, orthonormal to the columns of U,
+#' such that the span of v and the columns of U includes b. Append v
+#' to U as its last column and return the result.
 extendONS <- function(b, S, U=NULL){
   if(is.null(U))return(as.vector(b)/eunorm(b, S))
   if(is.vector(U))dim(U)<- c(length(U), 1)
   # find the residual of the projection of b on the column space of U.
-  ans <- as.vector(b) - U %*% inner(U, S, b)
+  v <- as.vector(b) - project(b, S, U)
   # return its normalized value
-  ans/eunorm(ans, S)
+  cbind(U, v/eunorm(v, S))
 }
+
+#' Return the S-projection of x on the span of an S-orthonormal set represented
+#' by the columns of U. (The returned object will be a vector, not an image or
+#' a matrix.)
+project <- function(x, S, U){
+  as.vector(U %*% inner(U, S, x))
+} 
