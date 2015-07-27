@@ -4,7 +4,8 @@ output: html_document
 ---
 
 #### Notes in reverse chronological order.
-
+* [S-Orthonormal image bases](www/pix_alternatives.html)
+    + *Projections on bases which are orthonormal with respect to a special inner product may prove valuable for image recovery.*
 * [System matrix utilities](www/writing_sysmat_utils.html)
 * [Some randomly generated "images"](www/random_images.html)
 * [Summary 7/2/2015](www/summary_2015_7_2.html)

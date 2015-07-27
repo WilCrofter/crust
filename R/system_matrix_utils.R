@@ -17,6 +17,14 @@ testImage <- function(nrows, ncols, spacing, slowness=1/1500){
   img
 }
 
+# Make a test image from a matrix
+as.testImage <- function(M, spacing, slowness=1/1500){
+  attr(M, "spacing") <- spacing
+  attr(M, "slowness") <- slowness
+  attr(M, "class") <- c("test image", attr(img, "class"))
+  M
+}
+
 # Plot a test image. Use this function for compatibility with overlay functions.
 plotTestImage <- function(test_image, ...){
   spacing <- attr(test_image, "spacing")
