@@ -7,9 +7,9 @@ output: html_document
 
 ### Theory
 
-**NOTE: There is an error in the 1st paragraph below. Please ignore this page until it's fixed.**
+*NOTE: I believe I've fixed the original error in equation (II) and in the subsequent code.* 
 
-If $S$ is a system matrix, a least squares solution, $b$, to $Sb \approx \tau,$ involves minimization of the quadratic form, $$q(b) = b^TS^TSb - 2b^TS^T\tau.\:\:\:\:(I)$$ The quadratic term regarded as an inner product, $\langle u, v\rangle \doteq b^TS^TSb,$ is of interest in this connection. If $U$ is a set of vectors which are orthonormal with respect to this inner product, then$$b = \sum_{u \in U} \langle S^T\tau, u \rangle u$$minimizes the quadratic form on the span of $U$. This is easily shown, for if $b = \sum_{u \in U} \alpha_u u,$ then by orthonormality,$$q(b) = \sum_{u \in U} \alpha_u^2 - 2\alpha_u \langle S^T\tau, u \rangle.$$Setting derivatives with respect to the $\alpha_u$ to zero proves the claim.
+If $S$ is a system matrix, a least squares solution, $b$, to $Sb \approx \tau,$ involves minimization of the quadratic form, $$q(b) = b^TS^TSb - 2b^TS^T\tau.\:\:\:\:(I)$$ The quadratic term regarded as an inner product, $\langle u, v\rangle \doteq b^TS^TSb,$ is of interest in this connection. If $U$ is a set of vectors which are orthonormal with respect to this inner product, then$$b = \sum_{u \in U} (u^T S^T \tau) u\:\:\:\:(II)$$minimizes the quadratic form on the span of $U$. This is easily shown, for if $b = \sum_{u \in U} \alpha_u u,$ then by orthonormality,$$q(b) = \sum_{u \in U} \alpha_u^2 - 2\alpha_u u^T S^T \tau.$$Setting derivatives with respect to the $\alpha_u$ to zero proves the claim.
 
 For brevity, I'll refer to orthonormality with respect to the above inner product, as "S-orthonormality."
 
@@ -73,17 +73,17 @@ U <- extendONS(u2, S, U)
 inner(U, S, U)
 ```
 
-Using a utility written for the purpose, I'll minimize the quadratic form (I) on the span of $U.$ (The result will, of course, be far from a global minimum.)
+Using equation (II), above, I'll minimize the quadratic form (I) on the span of $U.$ (The result will, of course, be far from a global minimum.)
 
 ```{r}
-minU <- project(t(S) %*% tau, S, U)
+minU <- U %*% t(U) %*% t(S) %*% tau
 ```
 
 The returned object, `minU`, is a vector of length 16*16. For display it can be converted to a test image, i.e, a 16x16 matrix with some added attributes such as "spacing".
 
 ```{r fig.align='center', fig.width=4.4}
 recovered <- as.testImage(matrix(minU, 16, 16), spacing=2)
-plotTestImage(recovered, col=c("black", "lightyellow", "red"), main="Image recovered by projection on\nan S-orthogonal basis of dimension 2.")
+plotTestImage(recovered, col=c("red", "lightyellow", "black"), main="Image recovered by use of\nan S-orthogonal basis of dimension 2.")
 ```
 
 The malignancy is clearly visible. I have, of course, cheated by using prior information as to where it is located. Moreover, the gland is nowhere in sight, and there is an artifact shown in black. The example is, admittedly, more sensational than informative. It does, however, suggest the possibility of high-resolution focus in one area (the malignancy) at the expense of others (the gland.)  
