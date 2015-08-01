@@ -7,6 +7,8 @@ output: html_document
 
 ### Theory
 
+**NOTE: There is an error in the 1st paragraph below. Please ignore this page until it's fixed.**
+
 If $S$ is a system matrix, a least squares solution, $b$, to $Sb \approx \tau,$ involves minimization of the quadratic form, $$q(b) = b^TS^TSb - 2b^TS^T\tau.\:\:\:\:(I)$$ The quadratic term regarded as an inner product, $\langle u, v\rangle \doteq b^TS^TSb,$ is of interest in this connection. If $U$ is a set of vectors which are orthonormal with respect to this inner product, then$$b = \sum_{u \in U} \langle S^T\tau, u \rangle u$$minimizes the quadratic form on the span of $U$. This is easily shown, for if $b = \sum_{u \in U} \alpha_u u,$ then by orthonormality,$$q(b) = \sum_{u \in U} \alpha_u^2 - 2\alpha_u \langle S^T\tau, u \rangle.$$Setting derivatives with respect to the $\alpha_u$ to zero proves the claim.
 
 For brevity, I'll refer to orthonormality with respect to the above inner product, as "S-orthonormality."
