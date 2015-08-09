@@ -24,8 +24,8 @@ impulseResponse <- function(tissue_ids, dx){
   idrow <- sapply(tissue_ids, function(id)which(id == temp))
   # Round-trip times (in milliseconds) from each of the n-2 interior boundaries
   speeds <- us_properties[idrow, "c"]
-  # The factor of 10^6 comes from 10^3 ms/s and 10^3 mm/mm. Speeds are in m/s.
-  tof <- 2*1e+6*dx*(1:(n-1)/speeds[1:(n-1)])
+  # The factor of 10^3 comes from 10^3 mm/m. Speeds are in m/s which equal mm/ms.
+  tof <- 2*1e+3*dx*(1:(n-1)/speeds[1:(n-1)])
   # Reflection coefficients from each of the boundaries
   Z1 <- us_properties[idrow[-n], "Z"]
   Z2 <- us_properties[idrow[-1], "Z"]
