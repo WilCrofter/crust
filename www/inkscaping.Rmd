@@ -1,0 +1,182 @@
+---
+title: "Prototyping virtual phantom of a human thigh"
+author: "W. Bauer"
+date: "August 8, 2015"
+output: html_document
+---
+
+This note develops prototype code to convert a anatomical diagram of a human thigh to [pixelated](https://en.wikipedia.org/wiki/Pixelation) phantoms. The diagram is from *Gray's Anatomy*, is in the public domain, and is hosted by [Wikipedia](https://upload.wikimedia.org/wikipedia/commons/4/4d/Gray432_color.png) 
+
+<center><div style="width:50%">
+![Human thigh](https://upload.wikimedia.org/wikipedia/commons/4/4d/Gray432_color.png)
+</div></center>
+
+### Getting data from Inkscape
+
+[Inkscape](https://inkscape.org/en/) is an open source scalable vector graphics (SVG) editor which (among many other things) can import bitmap images such as png's, and enables manual tracing of outlines. Once traced, outlines can be copied as text and further processed. 
+
+Text (xml formatted) output of an experimental inkscape curve produces what are apparently absolute positions, the format indicated by upper case M.
+
+```
+M 102.12272,57.288356 346.22093,61.024553 423.43567,185.56446 337.50314,358.67492 112.08591,337.50314 z
+```
+```{r}
+temp <- c(102.12272,57.288356, 346.22093,61.024553, 423.43567,185.56446, 337.50314,358.67492, 112.08591,337.50314)
+dim(temp) <- c(2, length(temp)/2)
+temp <- cbind(temp, temp[,1])
+plot(temp[1,], temp[2,], asp=1)
+polygon(t(temp))
+```
+
+However, an inkscape curve produced by manually tracing the outline of the Gray's Anatomy diagram produces a start position and a sequence of offsets, as apparently indicated by lower case m.
+
+```
+m 63.786982,421.11958 6.627219,-41.42012 28.165681,-64.61538 49.704138,-56.33136 41.42012,-26.50888 55.50296,-27.33728 47.21894,-9.94083 42.24852,1.65681 43.07692,9.94083 33.9645,12.42603 53.84615,27.33728 56.33136,50.53254 46.39053,54.67456 28.16568,43.90533 21.53847,57.98816 10.76923,82.01184 -4.14202,72.071 -21.53846,59.64497 -42.24852,61.30178 -67.10059,39.76331 -102.72189,16.56805 -101.89349,-22.36687 -68.7574,-35.6213 -90.29586,-72.071 -26.50887,-54.67456 z
+```
+
+```{r}
+temp <- c(63.786982,421.11958, 6.627219,-41.42012, 28.165681,-64.61538, 49.704138,-56.33136, 41.42012,-26.50888, 55.50296,-27.33728, 47.21894,-9.94083, 42.24852,1.65681, 43.07692,9.94083, 33.9645,12.42603, 53.84615,27.33728, 56.33136,50.53254, 46.39053,54.67456, 28.16568,43.90533, 21.53847,57.98816, 10.76923,82.01184, -4.14202,72.071, -21.53846,59.64497, -42.24852,61.30178, -67.10059,39.76331, -102.72189,16.56805, -101.89349,-22.36687, -68.7574,-35.6213, -90.29586,-72.071, -26.50887,-54.67456)
+dim(temp) <- c(2, length(temp)/2)
+temp[1,] <- cumsum(temp[1,])
+temp[2,] <- cumsum(temp[2,])
+temp <- cbind(temp, temp[,1])
+plot(temp[1,], temp[2,], asp=1)
+polygon(t(temp))
+```
+
+Provided "m" and "M" are the only codes, the following function, given inkscape output as a string, should create a polygon which R can interpret. Careful attention to the original image and the R polygon above indicates that Inkscape's y coordinate is in the direction opposite to R's. This is reflected in the code below.
+
+```{r}
+ink2R <- function(xml_string){
+  code <- substr(xml_string,1,1)
+  if(code != "m" & code != "M")stop(paste("Unrecognized code:", code))
+  xml_string <- substr(xml_string, 3, nchar(xml_string)-2)
+  xml_string <- paste0("c(", gsub(" ", ",", xml_string), ")")
+  pts <- t(matrix( eval(parse(text=xml_string)), nrow=2))
+  if(code == "m"){
+    pts[,1] <- cumsum(pts[,1])
+    pts[,2] <- cumsum(pts[,2])
+  }
+  pts <- rbind(pts, pts[1,])
+  # Inkscape's y coordinate is in the direction opposite to R's.
+  pts[,2] <- -pts[,2]
+  pts
+}
+```
+
+Testing the function on the traced outline.
+
+```{r}
+xml_str <- "m 63.786982,421.11958 6.627219,-41.42012 28.165681,-64.61538 49.704138,-56.33136 41.42012,-26.50888 55.50296,-27.33728 47.21894,-9.94083 42.24852,1.65681 43.07692,9.94083 33.9645,12.42603 53.84615,27.33728 56.33136,50.53254 46.39053,54.67456 28.16568,43.90533 21.53847,57.98816 10.76923,82.01184 -4.14202,72.071 -21.53846,59.64497 -42.24852,61.30178 -67.10059,39.76331 -102.72189,16.56805 -101.89349,-22.36687 -68.7574,-35.6213 -90.29586,-72.071 -26.50887,-54.67456 z"
+pts <- ink2R(xml_str)
+plot(pts[,1], pts[,2], asp=1, pch=19)
+polygon(pts)
+```
+
+### Pixelation
+
+Pixelation requires determining which pixels are interior to an outline. R's `sp` (spatial) package has a utility, `point.in.polygon`, for this purpose.
+
+Outline scale and location as obtained from Inkscape have relative value only. To place an outline within a grid, transformation will be necessary. Since an ultimate image would consist of a number of polygons (some overwriting others,) the same transformation should be applied to all. A transformation which maps a background image to the unit square seems reasonable. For simplicity I'll limit the transformation to translation and scaling. (Rotation, if necessary, can be handled separately.) The following functions will respectively derive and apply such a transform.
+
+```{r}
+deriveXform <- function(pgon){
+  r1 <- range(pgon[,1])
+  r2 <- range(pgon[,2])
+  # translation of minimum coordinates to 0
+  shift <- -c(r1[1], r2[1])
+  # scale maximum coordinate to 1
+  scale <- 1/(max(diff(r1), diff(r2)))
+  list(shift=shift, scale=scale)
+}
+
+applyXform <- function(pgon, xform){
+  pgon[,1] <- pgon[,1] + xform$shift[1]
+  pgon[,2] <- pgon[,2] + xform$shift[2]
+  pgon*xform$scale
+}
+
+```
+
+Suppose a 32x32 pixelated image is desired, and suppose a pixel is counted as interior to the outline if its midpoint, normalized to the unit square, is interior. A list of such midpoints would be:
+
+```{r}
+midpts <- (cbind(rep(1:32, each=32), rep(1:32, 32))-.5)/32
+```
+
+A matrix, with 1's in pixels interior to the background image and 0's elsewhere can be formed as follows.
+
+```{r}
+library(sp)
+xform <- deriveXform(pts)
+pts2 <- applyXform(pts, xform)
+img <- matrix(point.in.polygon(midpts[,1], midpts[,2], pts2[,1], pts2[,2]), 32, 32, byrow=TRUE)
+image(x=(1:32-.5)/32, y=(1:32-.5)/32, z=img, asp=1, xlab="x", ylab="y", col=c("blue", "lightgray"))
+polygon(pts2, lwd=2, border ="black")
+```
+
+The result is crude but suffices to prove the concept. As a further check, the *rectus femoris* muscle is added as follows.
+
+```{r}
+mxml <- "m 217.04142,267.03674 9.11243,-19.05326 25.68047,-14.08284 40.59172,-4.97041 27.33727,-4.14201 32.3077,6.62722 16.56804,14.91124 -1.6568,11.59763 -14.91124,14.08284 -20.71006,10.76923 -33.1361,9.11243 -21.53846,1.6568 -32.30769,-1.6568 -15.73965,-4.97041 z"
+mpts <- ink2R(mxml)
+mpts <- applyXform(mpts, xform)
+mimg <- matrix(point.in.polygon(midpts[,1], midpts[,2], mpts[,1], mpts[,2]), 32, 32, byrow=TRUE)
+mimg <- mimg*2
+image(x=(1:32-.5)/32, y=(1:32-.5)/32, z=pmax(img, mimg), asp=1, xlab="x", ylab="y", col=c("blue", "lightgray", "orange"))
+polygon(pts2, lwd=2, border ="black")
+polygon(mpts, lwd=2, border ="black")
+```
+
+### Arbitrary grids
+
+A structured list of polygons is probably the most useful form for the ultimate data, along with code which converts an arbitrary grid, somehow defined on the unit square, to a pixelated image. Once defined, a pixelated image can be derived using pixel midpoints, as above. The question is how to usefully define a grid.
+
+A simple scheme would be an oriented rectangle and a pixel size. Height and a center line would determine two parallel lines bounding the rectangle. A minimum width to include all tissue between those two lines could then determine the final dimension.
+
+As a prototype example, define a center line at $(x,y) = (.5, .4)$ with a slope of $m=.4$. Its y intercept is thus $y_0 = .3-.5 m = 0.1$. Assume a height of $h=.2$ relative to the unit square. Letting $\theta = arctan(.4),$ the lines' y intercepts would be at $y_0 \pm \frac{h}{2}cos(\theta).$
+
+Suppose that grid lines delimiting pixels cross the center line beginning at $x=0$ and continue at $s = 0.025$ intervals. The grid lines would then cross the center line at $(0, y_0) + i\cdot s \cdot(1, m)$, where $i=0, 1, \ldots,$ and would cross the upper and lower rectangle boundaries at $(0, y_0) + s \cdot(1,m) \pm \frac{h}{2}\cdot(-sin(\theta), cos(\theta))$ as shown in red in the figure below.
+
+Points which are interior to the polygon can be found as before. They are shown in solid red. A rectangle which includes these points is now easy to find. (See code below.) Its sides are shown in white. Now a grid can be computed and a pixelated image generated as before.
+
+```{r fig.show='hold'}
+plot(c(0,1), c(0,1), type='n', asp=1)
+polygon(c(0,1,1,0,0), c(0,0,1,1,0), col='blue') # background
+# tissue outline filled with light gray
+polygon(pts2, col='lightgray')
+# rectangle:
+h <- .2
+ctr <- c(.5, .4)
+m <- .4
+theta <- atan(m)
+y0 <- ctr[2]- m*ctr[1]
+# upper and lower rectangle boundaries in yellow
+abline(y0-h*cos(theta)/2, m, col="yellow", lwd=5)
+abline(y0+h*cos(theta)/2, m, col="yellow", lwd=5) #here
+# points at which grid crosses the center line
+ctrs <- sapply(seq(0, 1/cos(theta), by=0.025), function(dr)c(0.0, y0) + c(1, m)*dr)
+# upper & lower boundary crossings
+ubc <- sapply(1:ncol(ctrs), function(i)ctrs[,i]+0.1*c(-sin(theta), cos(theta)))
+lbc <- sapply(1:ncol(ctrs), function(i)ctrs[,i]-0.1*c(-sin(theta), cos(theta)))
+# display them
+points(ubc[1,], ubc[2,], col='red', cex=0.75, lwd=2)
+points(lbc[1,], lbc[2,], col='red', cex=0.75, lwd=2)
+# Find the interior points
+uidx <- as.logical(point.in.polygon(ubc[1,], ubc[2,], pts2[,1], pts2[,2]))
+lidx <- as.logical(point.in.polygon(lbc[1,], lbc[2,], pts2[,1], pts2[,2]))
+# display them in solid red
+points(ubc[1,uidx], ubc[2,uidx], col='red', cex=0.75, pch=19)
+points(lbc[1,lidx], lbc[2,lidx], col='red', cex=0.75, pch=19)
+i0 <- max(1, min(c(which(uidx), which(lidx))-1))
+i1 <- min(length(uidx), max(c(which(uidx), which(lidx))) + 1)
+segments(ubc[1,i0], ubc[2,i0], lbc[1,i0], lbc[2,i0], col="white", lwd=3)
+segments(ubc[1,i1], ubc[2,i1], lbc[1,i1], lbc[2,i1], col="white", lwd=3)
+```
+
+
+### Next
+
+The unit square was the wrong choice. A 20x20 cm square would not be unrealistic and should be the default.
+
+Utilities will be based on the code prototyped above, and used to import as much of the *Gray's Anatomy* diagram as practicable. The diagram will be imported as a structured set of polygons and utilities written to define and extract pixelated regions.
