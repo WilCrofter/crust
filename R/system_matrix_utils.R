@@ -8,7 +8,7 @@ if(isTRUE(file.info("R")$isdir)){
 }
 
 # Specify a test image by number of rows, number of columns, spacing,
-# and a default value for slowness.
+# and a default value for slowness, curently 1/1500.
 testImage <- function(nrows, ncols, spacing, slowness=1/1500){
   img <- matrix(slowness, nrows, ncols)
   attr(img, "spacing") <- spacing
