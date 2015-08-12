@@ -37,3 +37,20 @@ applyXform <- function(pgon, xform){
   pgon[,2] <- pgon[,2] + xform$shift[2]
   pgon*xform$scale
 }
+
+importInkscapePhantom <- function(file, max_coordinate=200){
+  paths <- read.table(file, header=TRUE, as.is = TRUE, sep=",")
+  k <- which(paths$layer == 1)[1]
+  xform <- deriveXform(ink2R(paths[k,"path"]), max_coordinate=max_coordinate)
+  ans <- list()
+  for(n in 1:nrow(paths)){
+    temp <- list()
+    for(name in names(paths)[-ncol(paths)]){
+      temp[[name]] <- paths[n, name]
+    }
+    shape <- applyXform(ink2R(paths[n,"path"]), xform)
+    temp[["shape"]] <- shape
+    ans[[paths[n,"description"]]] <- temp
+  }
+  ans
+}

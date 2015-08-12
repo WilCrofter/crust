@@ -5,11 +5,12 @@
 # vector graphics editor.
 #
 # Each record consists of 5 fields: layer, description, tissue, ID, path
-#  layer --a number indicating the order and color in which to draw the tissue
+#  layer --a number indicating the order and color in which to draw the tissue.
+#          Also distinguishes different tissues of same type
 #  description --a string
 #  tissue --a string naming the tissue type 
-#  ID --a number indicating acoustic properties
-#  path --a string of numbers define the tissue's outline
+#  ID --a number indicating type with respect to acoustic properties
+#  path --a string of coordinates which define the tissue's outline
 #
 # Diagram from Gray's Anatomy:
 # https://upload.wikimedia.org/wikipedia/commons/4/4d/Gray432_color.png
@@ -80,5 +81,4 @@ layer,description,tissue,ID,path
 # 
 7,"Femur","Bone",7,"m 292.01183,472.48053 -21.95266,-16.15385 -29.40828,-19.88166 -17.39645,-17.39645 -2.89941,-33.13609 9.11243,-19.46746 13.25443,-13.66864 22.78107,-8.28402 19.88166,-2.07101 20.71005,7.04142 15.32545,13.66864 6.21302,19.05326 -0.82841,30.23668 -4.55621,24.02367 -3.31361,17.39645 -1.2426,7.86982 -10.35503,7.86983 z"
 # Marrow
-8,"Femur marrow","Bone Marrow",11,"m 255.56213,411.17875 -4.97041,-19.88166 5.38461,-14.91124 9.11243,-10.76923 c 0,0 16.56804,-4.55621 18.63905,-4.14201 2.07101,0.4142 12.84024,6.21302 12.84024,6.21302 l 1.2426,9.11242 7.45562,3.31361 0,12.84024 -0.4142,16.15384 -4.97041,4.55622 4.14201,10.76923 -5.38462,11.59763 -2.071,6.21302 -3.72781,2.07101 -13.66864,-5.79882 -9.52663,-8.28403 -9.11243,-7.86982 z"
-
+8,"Femur marrow","Bone Marrow",11,"m 255.56213,375.55745 11.59763,-9.94083 24.43787,-0.8284 12.84024,13.66864 0.4142,47.63313 -6.62722,15.32545 -10.76923,3.72781 -23.60947,-20.71006 -11.18343,-20.71006 z"
