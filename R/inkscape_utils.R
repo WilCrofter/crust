@@ -119,7 +119,7 @@ overlayRectangle <- function(r,...){
   polygon(rbind(r,r[1,]),...)
 }
 
-pixelate <- function(phantom, rectangle, gridsize){
+pixelate <- function(phantom, r, gridsize){
   # assuming rectangle corners are arranged in clockwise order,
   # compute oriented base and height
   bv <- r[2,]-r[1,]
@@ -163,5 +163,5 @@ pixelatedImage <- function(img, col=NULL, xlab="x (mm)", ylab="y (mm)", ...){
   if(is.null(col))col <- gray.colors(length(unique(as.vector(img))))
   image(x=seq(0,attr(img,"base"), length.out=dim(img)[1]),
         y=seq(0,attr(img,"height"), length.out=dim(img)[2]), z=img, col=col, asp=1,
-        xlab=xlab, ylab=ylab)
+        xlab=xlab, ylab=ylab, ...)
 }

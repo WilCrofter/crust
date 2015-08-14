@@ -1,0 +1,105 @@
+---
+title: "Working prototype, phantom axial section of human thigh"
+author: "W. Bauer"
+date: "August 14, 2015"
+output: html_document
+---
+
+This describes a working prototype of a virtual axial section of a human thigh. The section is based on a public domain diagram from *Gray's Anatomy* which is pictured below.
+
+<center><div style="width:40%">
+![Human thigh](https://upload.wikimedia.org/wikipedia/commons/4/4d/Gray432_color.png)
+</div></center>
+
+The phantom can be loaded and displayed as follows:
+
+```{r echo=FALSE, eval=FALSE}
+# NOTE: Use these three lines, rather than the following snippet if 
+# executing Rmd code manually from the project directory.
+source("R/inkscape_utils.R")
+phantom <- importIPhantom("data/thigh_inkscape.csv")
+plotIPhantom(phantom)
+```
+
+```{r fig.align='center', fig.width=4.4, message=FALSE}
+source("../R/inkscape_utils.R")
+phantom <- importIPhantom("../data/thigh_inkscape.csv")
+plotIPhantom(phantom)
+```
+
+The phantom is meant for quick entré to the DVT use case presented at a recent meeting. The code is somewhat fragile and the phantom obviously simplified. At this writing the code lacks inline documentation, and this note is meant to partially fill that gap.
+
+The phantom itself does not consist of pixels, but is a list of annotated polygons, where a polygon is an array of vertices. Polygonal vertices and edges can be easily discerned in the IPhantom figure above. (More detail is given at the end of this note.)
+
+However rectangular sections of the phantom can be selected and exported as matrices with integer entries identifying the type of tissue at a corresponding pixel. I'll first illustrate how this is done and then explain how tissue types are associated with tissue types and acoustic properties.
+
+A rectangular area is specified by a center point an orientation angle (in radians,) both estimated by eye, and a height which would generally be the width of a probe in millimeters. Referring to the IPhantom image above, a center point at `(100, 100)`, an orientation angle of $\pi/4$ radians, and a height of 30 mm might include the deep veins pictured in blue. The rectangle is computed as follows:
+
+```{r}
+rect <- computeRectangle(phantom, c(100,100), pi/4, 30)
+```
+
+Once computed, an overlay of the rectangle can be superimposed on the phantom image:
+
+```{r fig.align='center', fig.width=4.4}
+plotIPhantom(phantom)
+overlayRectangle(rect, lwd=2)
+```
+
+Utility `pixelate` will produce a pixelated image of the portion of the phantom within the rectangle. It requires a pixel size which in practice would be transducer spacing, (~0.23 mm,) but I'll use 0.5 mm for illustration and convenience. Function `pixelatedImage` will display the result in gray scale.
+
+```{r fig.height=3, fig.align='center'}
+img <- pixelate(phantom, rect, 0.5)
+pixelatedImage(img, main="Pixelated region")
+```
+
+The image is essentially a matrix and, if desired, can be converted to Matlab (*.mat) binary file format using the R package `R.matlab`. (I can easily do this for any project member upon request.) Each entry in the matrix is a tissue ID, which corresponds to an entry in the ID column of the following table. For computer processing, the table can be read from the project's `data/acoustic_properties_thigh.csv` spreadsheet.
+
+Tissue | ID | c (m/s) | rho (kg/mm^3^)| Z
+-------|----|---------|----------------|---
+White Matter | 3 | 1035 | 1562 | 1616670
+Fat | 4 | 928 | 1445 | 1340960
+Muscle | 5 | 1070 | 1585 | 1695950
+Muscle/Skin | 6 | 1110 | 1660 | 1842600
+Bone | 7 | 1610 | 2845 | 4580450
+Vessels | 8 | 1055 | 1584 | 1671120
+Around fat | 9 | 1000 | 1522 | 1522000
+Dura mater | 10 | 1000 | 1522 | 1522000
+Bone marrow | 11 | 1017 | 1540 | 1566180
+
+### Phantom structure
+
+Data on which the phantom is based are in the project's `data/thigh_inkscape.csv` spreadsheet. Each record in that file consists primarily of manually traced outlines of major tissues based on the public domain diagram referenced earlier. Tracings were made with Inkscape, a free and open source scalable vector graphics editor. 
+
+(The prototype software described here can handle only the simplest of Inkscape's path encoding constructs hence the caveat, "fragile." E.g., NURBs are not handled.)
+
+In detail, each record consists of 5 fields: layer, description, tissue, ID, path
+
+* layer --a number indicating the order and color in which to draw the tissue. Also distinguishes different tissues of same type
+* description --a string corresponding to the region's label in Gray's Anatomy
+* tissue --a string naming the tissue type (e.g., Fat, Muscle, etc.)
+* ID --a unique numerical ID encoding tissue type
+* path --a string of coordinates which define the tissue's outline in Inkscape SVG format.
+
+When imported into R the format is similar. The overall structure, `phantom`, is a named list, and each record in the spreadsheet corresponds to an entry in that list. Each entry is, itself, a named list with fields matching those of the spreadsheet with one exception. The exception is that the spreadsheet's `path` field is replaced by a `shape` array which represents the outline as an R polygon. All shapes are scaled to a common range (0 to 200 mm by default) so they are in correct proportion to one another.
+
+The elements of `phantom` are named by the associated description field. E.g., the first 4 names are:
+
+```{r}
+names(phantom)[1:4]
+```
+
+Each element has 5 fields as indicated above. Thus the first 4 fields of the "Vactus intermedius" muscle can be accessed, e.g., as
+
+```{r}
+phantom[["Vactus intermedius"]][1:4]
+```
+
+The shape field is more intelligible if plotted.
+
+```{r fig.align='center', fig.show='hold', fig.width=4.4}
+shape <- phantom[["Vactus intermedius"]][["shape"]]
+plot(shape[,1], shape[,2], xlab="x (mm)", ylab="y (mm)", main="Vactus intermedius", asp=1, pch=19)
+polygon(shape[,1], shape[,2], lwd=3, col="tan")
+```
+
