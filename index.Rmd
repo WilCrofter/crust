@@ -4,6 +4,7 @@ output: html_document
 ---
 
 #### Notes in reverse chronological order.
+* [Working prototype, phantom axial section of human thigh](www/thigh_working_prototype.html)
 * [Prototyping virtual phantom of a human thigh](www/inkscaping.html)
 * [S-Orthonormal image bases](www/pix_alternatives.html)
     + *Bases which are orthonormal with respect to a special inner product may prove valuable for image recovery.*
