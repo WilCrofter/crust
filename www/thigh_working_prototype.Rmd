@@ -31,7 +31,7 @@ The phantom is meant for quick entré to the DVT use case presented at a recent 
 
 The phantom itself does not consist of pixels, but is a list of annotated polygons, where a polygon is an array of vertices. Polygonal vertices and edges can be easily discerned in the IPhantom figure above. (More detail is given at the end of this note.)
 
-However rectangular sections of the phantom can be selected and exported as matrices with integer entries identifying the type of tissue at a corresponding pixel. I'll first illustrate how this is done and then explain how tissue types are associated with tissue types and acoustic properties.
+Rectangular sections of the phantom can, however, be selected and exported as matrices with integer entries identifying the type of tissue at a corresponding pixel. I'll first illustrate how this is done and then explain how integer tissue types are associated with tissue names (e.g., Muscle, Vessel,) and acoustic properties.
 
 A rectangular area is specified by a center point an orientation angle (in radians,) both estimated by eye, and a height which would generally be the width of a probe in millimeters. Referring to the IPhantom image above, a center point at `(100, 100)`, an orientation angle of $\pi/4$ radians, and a height of 30 mm might include the deep veins pictured in blue. The rectangle is computed as follows:
 
@@ -55,7 +55,7 @@ pixelatedImage(img, main="Pixelated region")
 
 The image is essentially a matrix and, if desired, can be converted to Matlab (*.mat) binary file format using the R package `R.matlab`. (I can easily do this for any project member upon request.) Each entry in the matrix is a tissue ID, which corresponds to an entry in the ID column of the following table. For computer processing, the table can be read from the project's `data/acoustic_properties_thigh.csv` spreadsheet.
 
-Tissue | ID | c (m/s) | rho (kg/mm^3^)| Z
+Tissue | ID | c (m/s) | rho (kg/m^3^)| Z
 -------|----|---------|----------------|---
 White Matter | 3 | 1035 | 1562 | 1616670
 Fat | 4 | 928 | 1445 | 1340960
@@ -64,7 +64,6 @@ Muscle/Skin | 6 | 1110 | 1660 | 1842600
 Bone | 7 | 1610 | 2845 | 4580450
 Vessels | 8 | 1055 | 1584 | 1671120
 Around fat | 9 | 1000 | 1522 | 1522000
-Dura mater | 10 | 1000 | 1522 | 1522000
 Bone marrow | 11 | 1017 | 1540 | 1566180
 
 ### Phantom structure
