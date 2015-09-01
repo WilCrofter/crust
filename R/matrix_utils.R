@@ -2,9 +2,10 @@
 findIdentiRows <- function(mat,nr,nc){
   for (i in 1:(nr-1))
     for (j in (i+1):nr){
-      ctr <- sum(mat[i,]==mat[j,])
-      if (ctr==nc) print(paste("Rows ",i,"and",j,"are identical",sep=" "))
-      
+  #    ctr <- sum(mat[i,]==mat[j,])
+   #   if (ctr==nc) print(paste("Rows ",i,"and",j,"are identical",sep=" "))
+     if (isTRUE(all.equal(mat[i,],mat[j,])))  
+       print(paste("Rows ",i,"and",j,"are identical",sep=" "))
     }
   
   
