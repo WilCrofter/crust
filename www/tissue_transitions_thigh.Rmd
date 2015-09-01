@@ -1,0 +1,54 @@
+---
+title: "Tissue type transitions, thigh section"
+author: "W. Bauer"
+date: "September 1, 2015"
+output: html_document
+---
+
+For convenience, I've made a csv file of the pixelated section of "digital thigh" used for illustration [here](thigh_working_prototype.html). This note estimates statistical properties of possible interest in dealing with the problem of incomplete information. In particular, it estimates probabilites that various tissue types appear in adjacent pixels.
+
+
+```{r fig.align='center', fig.height=3}
+img <- as.matrix(read.csv("../data/pixelized_thigh_section.csv", comment.char = "#"))
+image(img, xlab="x (180 mm)", ylab="y (30 mm)", asp=dim(img)[2]/dim(img)[1], xaxt='n', yaxt='n', col=gray.colors(length(unique(as.vector(img)))))
+```
+
+I'll estimate horizontal (x direction) and vertical adjacency statistics separately. First, vertically, i.e., across rows by column.
+
+```{r}
+n <- dim(img)[2]
+# All pairs img[i,j], img[i, j+1]
+pairs <- cbind(as.vector(img[,-n]), as.vector(img[,-1]))
+# Unique pairs
+upairs <- unique(pairs)
+# Counts
+counts <- numeric(nrow(upairs))
+for(i in 1:length(counts)){
+  counts[i] <- sum(pairs[,1]==upairs[i,1] & pairs[,2]==upairs[i,2])
+}
+ycounts <- cbind(upairs, counts)
+colnames(ycounts) <- c("y", "y+1", "ycount")
+ycounts <- ycounts[order(ycounts[,3], decreasing = TRUE), ]
+ycounts
+```
+
+Horizontally 
+
+```{r}
+n <- dim(img)[1]
+# All pairs img[i+1,j], img[i, j]
+pairs <- cbind(as.vector(img[-n,]), as.vector(img[-1,]))
+# Unique pairs
+upairs <- unique(pairs)
+# Counts
+counts <- numeric(nrow(upairs))
+for(i in 1:length(counts)){
+  counts[i] <- sum(pairs[,1]==upairs[i,1] & pairs[,2]==upairs[i,2])
+}
+xcounts <- cbind(upairs, counts)
+colnames(xcounts) <- c("x", "x+1", "xcount")
+xcounts <- xcounts[order(xcounts[,3], decreasing = TRUE), ]
+xcounts
+```
+
+I've saved the counts as `thigh_y_digraphs.csv` and `thigh_x_digraphs.csv` in the data subdirectory.
