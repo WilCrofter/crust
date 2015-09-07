@@ -1,7 +1,13 @@
 library(Matrix)
 
+# Determine S matrix column associated with pixel i,j
 ij2col <- function(i, j, nr, nc){
   (j-1)*nr + i
+}
+
+# Determine the S matrix row associated with transducer pair i, j
+ij2row <- function(i, j, ntransducers){
+  (j-1)*ntransducers + i
 }
 
 formH <- function(nr, nc){
@@ -30,4 +36,20 @@ formV <- function(nr, nc){
     }
   }
   t(V) %*% V
+}
+
+genS <- function(n, m, gridsize){
+  S <- Matrix(0, n^2, n*m)
+  for(i in 1:n){
+    for(j in 1:n){
+      u <- c(-1e-6, (i-0.5)*gridsize, 0)
+      v <- c(m*gridsize+1e-6, (j-0.5)*gridsize, 0)
+      segs <- segmentLengths(m, n, u, v, gridsize)
+      ridx <- ij2row(i,j,n)
+      for(k in 1:nrow(segs)){
+        S[ridx, ij2col(segs[k,2], segs[k,1], n, m)] <- segs[k,3]
+      }
+    }
+  }
+  S
 }
