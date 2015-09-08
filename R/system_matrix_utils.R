@@ -141,8 +141,9 @@ sysMat <- function(probe_ys, test_image, check=FALSE, MatrixPackage=FALSE){
         stop(paste("Line segment(s) missing in path",i, j))
       }
       for (k in 1:length(segs$segment_length)) {
-        idx <- (segs$y_index[k]-1) * nx + segs$x_index[k]
+        idx <- (segs$x_index[k]-1) * ny + segs$y_index[k]
         S[(j-1)*nprobe + i, idx] <- segs$segment_length[k]
+       
       }
     }
   S

@@ -1,0 +1,37 @@
+---
+title: "Test smooth.R"
+author: "W. Bauer"
+date: "September 8, 2015"
+output: html_document
+---
+
+```{r}
+source("../R/smooth.R")
+source("../R/system_matrix_utils.R")
+library(Matrix)
+```
+
+Construct a test image
+
+```{r fig.show='hold'}
+ap <- read.table("../data/acoustic_properties_thigh.csv", sep=',', header=TRUE, as.is=TRUE)
+img <- testImage(24,8,1,1/1450) # fat background
+img[4:14, 2:5] <- 1/1585  # muscle
+img[19:20, 6:7] <- 1/1584 # vessel
+img[1, 1:8] <- 1/1660   # skin
+img[24, 1:8] <- 1/1660  # skin
+plotTestImage(img)
+gridOverlay(img)
+ys <- probeYs(8, img)
+probeOverlay(ys, img, col=c("black", "white"))
+M <- sysMat(ys, img, check=TRUE, MatrixPackage = TRUE)
+# tau <- M %*% as.vector(img)
+```
+
+```{r}
+ans <- integer()
+for(i in 1:nrow(M)){
+  if(max(abs(M[i,]-S[i,])) > .1) ans <- c(ans, i)
+}
+```
+

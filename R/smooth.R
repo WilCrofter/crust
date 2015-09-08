@@ -38,6 +38,8 @@ formV <- function(nr, nc){
   t(V) %*% V
 }
 
+# NOTE: n is the number of rows of pixels in the IMAGE, m the number of columns.
+# BUT, n is the number of COLUMNS in the corresponding matrix.
 genS <- function(n, m, gridsize){
   S <- Matrix(0, n^2, n*m)
   for(i in 1:n){
