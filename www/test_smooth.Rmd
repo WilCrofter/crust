@@ -25,7 +25,7 @@ gridOverlay(img)
 ys <- probeYs(8, img)
 probeOverlay(ys, img, col=c("black", "white"))
 M <- sysMat(ys, img, check=TRUE, MatrixPackage = TRUE)
-# tau <- M %*% as.vector(img)
+tau <- M %*% as.vector(img)
 ```
 
 ```{r}

@@ -55,3 +55,7 @@ genS <- function(n, m, gridsize){
   }
   S
 }
+
+pcsd <- function(img, beta){
+  sd( (as.vector(beta)-as.vector(img))/as.vector(img) )
+}
