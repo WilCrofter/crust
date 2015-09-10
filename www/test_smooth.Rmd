@@ -24,7 +24,7 @@ plotTestImage(img)
 gridOverlay(img)
 ys <- probeYs(8, img)
 probeOverlay(ys, img, col=c("black", "white"))
-M <- sysMat(ys, img, check=TRUE, MatrixPackage = TRUE)
+M <- genS(8,24,1)
 tau <- M %*% as.vector(img)
 ```
 
@@ -33,5 +33,38 @@ ans <- integer()
 for(i in 1:nrow(M)){
   if(max(abs(M[i,]-S[i,])) > .1) ans <- c(ans, i)
 }
+```
+
+```{r}
+makevec <- function(img){
+  nr <- nrow(img)
+  nc <- ncol(img)
+  ans <- numeric(nr*nc)
+  for(i in 1:nr){
+    for(j in 1:nc){
+      ans[ij2col(i,j,nr,nc)] <- img[i,j]
+    }
+  }
+  ans
+}
+```
+
+Problem!!
+
+```{r}
+S <- sysMat(ys, img)
+# These two vectors should match and they don't
+as.vector(img)[which(S[10,]==1)]
+as.vector(img)[which(S[19,]==1)]
+# Specifically, the 18th entry of the latter is a vessel, not fat.
+# That 18th entry corresponds to entry 139 of as.vector(img)
+# Entry 139 of S[19,] is 12
+```
+
+But, after we change the roles of i and j in ij2col, M[10,]==1, counts sequentially from 9 to 32, but it should count from 25 to 48.
+
+```{r}
+M <- genS(8,24,1)
+which(M[10,]==1)
 ```
 
