@@ -22,32 +22,32 @@ ij2row <- function(i, j, ntransducers){
   (j-1)*ntransducers + i
 }
 
-formH <- function(nr, nc){
-  d <- nr*nc
+formH <- function(height, width){
+  d <- height*width
   H <- Matrix(0, d, d)
-  for(i in 1:nr){
-    for(j in 1:(nc-1)){
-      r <- ij2col(i,j,nr,nc)
+  for(pixrow in 1:height){
+    for(pixcol in 1:(width-1)){
+      r <- ij2col(pixrow,pixcol,height,width)
       H[r,r] <- 1
-      s <- ij2col(i,j+1,nr,nc)
+      s <- ij2col(pixrow,pixcol+1,height,width)
       H[r,s] <- -1
     }
   }
-  t(H) %*% H
+  H
 }
 
-formV <- function(nr, nc){
-  d <- nr*nc
+formV <- function(height, width){
+  d <- height*width
   V <- Matrix(0, d, d)
-  for(i in 1:(nr-1)){
-    for(j in 1:nc){
-      r <- ij2col(i,j,nr,nc)
+  for(pixrow in 1:(height-1)){
+    for(pixcol in 1:width){
+      r <- ij2col(pixrow,pixcol,height,width)
       V[r,r] <- 1
-      s <- ij2col(i+1,j,nr,nc)
+      s <- ij2col(pixrow+1,pixcol,height,width)
       V[r,s] <- -1
     }
   }
-  t(V) %*% V
+  V
 }
 
 # NOTE: height is the number of rows of pixels in the IMAGE, width the number of columns.
