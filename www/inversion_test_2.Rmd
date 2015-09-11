@@ -1,0 +1,56 @@
+---
+title: "Inversion strategy 2"
+author: "W. Bauer"
+date: "September 11, 2015"
+output: html_document
+---
+
+```{r message=FALSE, warning=FALSE}
+source("../R/smooth.R")
+source("../R/system_matrix_utils.R")
+source("../R/utilities.R")
+library(Matrix)
+```
+
+This note is essentially a repeat of [the previous](test_smooth.html) using a finer grid. Generating data:
+
+```{r fig.show='hold', fig.align='center', fig.height=4.5}
+img <- testImage(48,16,1,1/1450) # fat background
+img[8:28, 4:10] <- 1/1585  # muscle
+img[38:41, 11:14] <- 1/1584 # vessel
+img[1:2, 1:16] <- 1/1660   # skin
+img[47:48, 1:16] <- 1/1660  # skin
+ys <- probeYs(16, img)
+S <- genS(16,48,1/2)
+tau <- S %*% as.vector(img)
+plotTestImage(img)
+gridOverlay(img)
+probeOverlay(ys, img, col=c("black", "white"))
+```
+
+
+Recovering images.
+
+```{r fig.align='center', fig.show='hold', fig.height=4.5}
+H <- formH(16, 48)
+V <- formV(16, 48)
+HTH <- t(H) %*% H
+VTV <- t(V) %*% V
+STS <- t(S) %*% S
+bhat <- solve(STS + 1.0*(HTH+VTV), t(S) %*% tau)
+ihat <- as.testImage(matrix(bhat, 48, 16), 1/2)
+plotTestImage(ihat, main="H and V weight = 1.0")
+bhat2 <- solve(STS + .10*(HTH+VTV), t(S) %*% tau)
+ihat2 <- as.testImage(matrix(bhat2,  48, 16), 1/2)
+plotTestImage(ihat2, main="H and V weight = 1e-1")
+bhat3 <- solve(STS + 1e-2*(HTH+VTV), t(S) %*% tau)
+ihat3 <- as.testImage(matrix(bhat3,  48, 16), 1/2)
+plotTestImage(ihat3, main="H and V weight = 1e-2")
+bhat4 <- solve(STS + 1e-6*(HTH+VTV), t(S) %*% tau)
+ihat4 <- as.testImage(matrix(bhat4,  48, 16), 1/2)
+plotTestImage(ihat4, main="H and V weight = 1e-6")
+bhat5 <- solve(STS + 1e-9*(HTH+VTV), t(S) %*% tau)
+ihat5 <- as.testImage(matrix(bhat5,  48, 16), 1/2)
+plotTestImage(ihat5, main="H and V weight = 1e-9")
+```
+

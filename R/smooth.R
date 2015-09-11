@@ -72,3 +72,19 @@ genS <- function(height, width, gridsize){
 pcmean <- function(img, beta){
   mean(abs( (as.vector(beta)-as.vector(img))/as.vector(img) ))
 }
+
+# Placing the patch at pixrow, slide it horizontally, apply S at each offset, and
+# save the correlation of the result with tau.
+slider <- function(img, patch, pixrow, tau){
+  width <- dim(img)[1]
+  height <- dim(img)[2]
+  pwidth <- dim(patch)[1]
+  pheight <- dim(patch)[2]
+  ans <- numeric()
+  for(pixcol in 1:(width-pwidth+1)){
+    pimg <- matrix(1/1450, width, height)
+    pimg[pixcol:(pixcol+pwidth-1), pixrow:(pixrow+pheight-1)] <- patch
+    ans <- c(ans, cor(as.vector(S %*% as.vector(pimg)), as.vector(tau)))
+  }
+  ans
+}
