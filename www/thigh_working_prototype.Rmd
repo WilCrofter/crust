@@ -55,8 +55,9 @@ pixelatedImage(img, main="Pixelated region")
 
 The image is essentially a matrix and, if desired, can be converted to Matlab (*.mat) binary file format using the R package `R.matlab`. (I can easily do this for any project member upon request.) Each entry in the matrix is a tissue ID, which corresponds to an entry in the ID column of the following table. For computer processing, the table can be read from the project's `data/acoustic_properties_thigh.csv` spreadsheet.
 
-Tissue | ID | c (m/s) | rho (kg/m^3^)| Z
+Tissue | ID | rho (kg/m^3^)| c (m/s) | Z
 -------|----|---------|----------------|---
+PAA gel | 0 |1103 |1540 | 1698620
 White Matter | 3 | 1035 | 1562 | 1616670
 Fat | 4 | 928 | 1445 | 1340960
 Muscle | 5 | 1070 | 1585 | 1695950
