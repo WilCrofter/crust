@@ -4,6 +4,7 @@ output: html_document
 ---
 
 #### Notes in reverse chronological order.
+* [Testing ICM algorithm on recovered image](www/ICM_test.html)
 * [Test of inversion strategy with finer grid](www/inversion_test_2.html)
 * [Testing an inversion strategy](www/test_smooth.html)
 * [Tissue adjacency statistics, thigh section](www/tissue_transitions_thigh.html)
