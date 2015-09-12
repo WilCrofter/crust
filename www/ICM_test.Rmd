@@ -1,0 +1,70 @@
+---
+title: "ICM test"
+author: "W. Bauer, R. Grdina"
+date: "September 12, 2015"
+output: html_document
+---
+
+In the [previous note](inversion_test_2.html) we generated a test image and applied a recovery technique based on the idea that adjacent pixels usually look alike. The image and recovery are repeated here for convenience.
+
+```{r message=FALSE, warning=FALSE, echo=FALSE}
+source("../R/smooth.R")
+source("../R/system_matrix_utils.R")
+source("../R/utilities.R")
+source("../R/orchard.R")
+library(Matrix)
+```
+
+```{r fig.show='hold', fig.align='center', fig.height=4.5, echo=FALSE}
+img <- testImage(48,16,1,1/1450) # fat background
+img[8:28, 4:10] <- 1/1585  # muscle
+img[38:41, 11:14] <- 1/1584 # vessel
+img[1:2, 1:16] <- 1/1660   # skin
+img[47:48, 1:16] <- 1/1660  # skin
+ys <- probeYs(16, img)
+S <- genS(16,48,1/2)
+tau <- S %*% as.vector(img)
+plotTestImage(img)
+gridOverlay(img)
+probeOverlay(ys, img, col=c("black", "white"))
+
+H <- formH(16, 48)
+V <- formV(16, 48)
+HTH <- t(H) %*% H
+VTV <- t(V) %*% V
+STS <- t(S) %*% S
+bhat5 <- solve(STS + 1e-9*(HTH+VTV), t(S) %*% tau)
+ihat5 <- as.testImage(matrix(bhat5,  48, 16), 1/2)
+plotTestImage(ihat5, main="H and V weight = 1e-9")
+```
+
+We ran a quick test using [Iterated Conditional Modes (ICM)](http://homepages.inf.ed.ac.uk/rbf/CVonline/LOCAL_COPIES/AV0809/ORCHARD/) to clean up the recovered image. The matlab code provided at the link is provided in the project file matlab/orchard.m and the adaptation to R and our setup is in the file R/orchard.R. The ICM code requires an estimate of error variance, but for convenience we used the actual variance. We also used .001 to weight the differences between adjacent pixels and ran through 10 iterations.
+
+```{r fig.show='hold', fig.align='center', fig.height=4.5}
+covar <- var(as.vector(img-ihat5))
+tslows <- unique(as.vector(img))
+names(tslows) <- c("skin","fat","muscle","vessel")
+max_diff <- diff(range(tslows))
+dst <- restore_image(ihat5,covar,max_diff, 1e-3,10,tslows)
+idst <- as.testImage(dst,.5)
+plotTestImage(idst)
+```
+
+We obviously lost the skin but we can look at the difference between the true image and the restored image.
+
+```{r}
+plotTestImage(as.testImage(img-idst,.5))
+```
+
+Most of the restoration was correct, but the following table summarizes the misclassifications. The most common error was mistaking muscle and vessel. Skin and vessels were also mischaracterized as fat, probably because these regions were small.
+
+```{r echo=FALSE}
+temp <- table(signif(abs(img-idst), 4))
+data.frame(differences=c("various", "muscle/vessel", "fat/vessel", "fat/skin"), values=as.numeric(names(temp)), counts=as.vector(temp))
+```
+
+The slowness values of various tissues follow:
+```{r echo=FALSE}
+tslows
+```
+
