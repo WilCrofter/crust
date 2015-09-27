@@ -12,7 +12,7 @@
 # To convert tissue types to speeds of sound
 # > for(id in unique(as.vector(img))){
 #       idx <- img==id 
-#       img[idx] <- ap[ap$ID==id, "c"]}
+#       img[idx] <- ap[ap$ID==id, "speed"]}
 # For slowness:
 # > img <- 1/img
 #
