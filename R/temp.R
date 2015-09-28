@@ -9,7 +9,7 @@ sumdij <- function(img, n=100, delta=1){
   sum(dij(n, img, delta))
 }
 
-wH <- 1e-7
+wH <- 1e-12 # 1e-12 and wH/2 were best
 wV <- wH/3
 bhat2 <- solve(STS + wH*HTH+wV*VTV, t(S) %*% tau)
 ihat2 <- as.testImage(matrix(bhat2,  48, 16), 1/2)
