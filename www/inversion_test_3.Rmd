@@ -1,0 +1,77 @@
+---
+title: "Inversion strategy 3"
+author: "W. Bauer, R. Grdina"
+date: "September 29, 2015"
+output: html_document
+---
+
+Penalizing summed squares of adjacent differences regularizes the system matrix, but suffers because adjacent differences are large about 5% of the time (edges) and small otherwise. Individual adjacent differences are thus distributed as a mixture of two distributions. Regularizing as if they should all be small blurs edges.
+
+However, a sum (not sum of squares) of randomly selected adjacent differences should be approximately Gaussian by the Central Limit Theorem. Moreover, since tissues have roughly the same number of "ingoing" and "outgoing" edges, differences at edges should approximately add out. Thus a random sum of adjacent differences should be essentially normal with mean zero, as opposed to a mixture.
+
+```{r echo=FALSE, warning=FALSE, message=FALSE}
+source("../R/utilities.R")
+source("../R/smooth.R")
+source("../R/system_matrix_utils.R")
+# Read a pixelized section of the thigh phantom
+timg <- as.matrix(read.csv("../data/pixelized_thigh_section.csv", comment.char = "#"))
+# Convert tissue types to speeds
+ap <- read.csv("../data/acoustic_properties_thigh.csv")
+img <- timg
+for(id in unique(as.vector(img))){
+  idx <- img==id 
+  img[idx] <- ap[ap$ID==id, "speed"]
+}
+# Convert speed to slownness
+img <- as.testImage(1/img, .5)
+```
+
+Regularized recovery
+
+```{r}
+simg <- as.testImage(img[250:297, 32:47], .5)
+stimg <- timg[250:297, 32:47]
+S <- genS(dim(simg)[2], dim(simg)[1], .5)
+STS <- t(S) %*% S
+tau <- S %*% as.vector(simg)
+H <- formH(16, 48)
+V <- formV(16, 48)
+H2 <- summingMatrix(768, 200) %*% H
+V2 <- summingMatrix(768, 200) %*% V
+HTH <- t(H2) %*% H2
+VTV <- t(V2) %*% V2
+wH <- 1e-12 # 1e-12 and wH/2 were best
+wV <- wH/2
+bhat <- solve(STS + wH*HTH+wV*VTV, t(S) %*% tau)
+ihat <- as.testImage(matrix(bhat,  48, 16), 1/2)
+plotTestImage(ihat, main=paste("wH = ", wH, "wV = ", wV))
+cor(as.vector(bhat), as.vector(simg))
+```
+
+Edges and data frame
+
+```{r}
+edges <- 0 != (diff(stimg)[,-dim(stimg)[2]]) | 0 != (t(diff(t(stimg)))[-dim(stimg)[1],])
+delta <- 3
+ranpt <- function(ihat,edges,delta){
+  i <- delta + sample(dim(edges)[1]-delta*2,1, replace=TRUE)
+  j <- delta + sample(dim(edges)[2]-delta*2,1, replace=TRUE)
+  c(as.numeric(edges[i,j]),as.vector(ihat[seq(i-delta,i+delta),seq(j-delta,j+delta)]))
+}
+mydata <- as.data.frame(t(sapply(1:300, function(k)ranpt(ihat, edges, delta))))
+names(mydata)[1] <- "edge"
+mdl <- glm(edge ~ 0 + ., family = binomial, data=mydata)
+```
+
+```{r}
+ans <- numeric()
+for(i in (1+delta):(dim(ihat)[1]-delta)){
+  for(j in (1+delta):(dim(ihat)[2]-delta)){
+    temp <- c(as.numeric(edges[i,j]),as.vector(ihat[seq(i-delta,i+delta),seq(j-delta,j+delta)]))
+    ans <- rbind(ans, temp)
+  }
+}
+ans <- as.data.frame(ans, row.name = NULL)
+names(ans) <- c("edge", paste0("V.", 2:(1+(2*delta+1)^2)))
+```
+
