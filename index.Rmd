@@ -4,6 +4,7 @@ output: html_document
 ---
 
 #### Notes in reverse chronological order.
+* [Regularization by normally distributed image statistics](www/inversion_test_3.html)
 * [Testing ICM algorithm on recovered image](www/ICM_test.html)
 * [Test of inversion strategy with finer grid](www/inversion_test_2.html)
 * [Testing an inversion strategy](www/test_smooth.html)

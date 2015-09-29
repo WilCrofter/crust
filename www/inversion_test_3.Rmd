@@ -1,0 +1,86 @@
+---
+title: "Inversion strategy 3"
+author: "W. Bauer, R. Grdina"
+date: "September 29, 2015"
+output: html_document
+---
+
+Penalizing summed squares of adjacent differences regularizes the system matrix, but suffers because adjacent differences are large about 5% of the time (edges) and small otherwise. Individual adjacent differences are thus distributed as a mixture of two distributions, but penalizing summed squares treats them as normal with mean zero.
+
+However, a sum (not sum of squares) of randomly selected adjacent differences should be approximately normal by the Central Limit Theorem. Moreover, since tissues have roughly the same number of "ingoing" and "outgoing" edges, differences at edges should approximately add out. Thus a random sum of adjacent differences should be normal with mean zero.
+
+```{r echo=FALSE, warning=FALSE, message=FALSE}
+source("../R/utilities.R")
+source("../R/smooth.R")
+source("../R/system_matrix_utils.R")
+# Read a pixelized section of the thigh phantom
+timg <- as.matrix(read.csv("../data/pixelized_thigh_section.csv", comment.char = "#"))
+# Convert tissue types to speeds
+ap <- read.csv("../data/acoustic_properties_thigh.csv")
+img <- timg
+for(id in unique(as.vector(img))){
+  idx <- img==id 
+  img[idx] <- ap[ap$ID==id, "speed"]
+}
+# Convert speed to slownness
+img <- as.testImage(1/img, .5)
+```
+
+We can demonstrate this using the section of thigh phantom shown below.
+
+```{r fig.align='center', fig.show='hold', fig.height=4.2, echo=FALSE}
+plotTestImage(img, main="Full thigh section")
+```
+
+```{r fig.align='center', fig.show='hold'}
+
+set.seed(1443551763) # system time at time of writng
+
+rsumdiff <- function(img, ntrials, nsummed){
+  # Form a vector of horizontal differences
+  deltas <- as.vector(diff(img))
+  # For ntrials, sum nsummed randomly sampled differences
+  sapply(1:ntrials, function(k)sum(sample(deltas, nsummed, replace=TRUE)))
+}
+
+rsums <- rsumdiff(img, ntrials=1000, nsummed=200)
+hist(rsums, main="Sums of randomly sampled adjacent differences", xlab="sums")
+abline(v=mean(rsums), lwd=3, lty=2, col='red')
+text(mean(rsums), 210, "mean", pos=4, lwd=3, col='red')
+```
+
+As expected, a Shapiro-Wilk test does not reject normality.
+
+```{r echo=FALSE}
+shapiro.test(rsums)
+```
+
+Here we give an example in which regularizing with random sums of adjacent differences results in an inverse having a ~65% correlation with the original image. We do not claim this is an adequate recovery. Rather, because a regularized matrix is nonsingular, we think a it should be regarded as a possibly useful change of variable applied to time-of-flight data.
+
+For the sake of run time we take the following 16x48 subset of `img`:
+
+```{r echo=FALSE, fig.align='center', fig.show='hold', fig.height=4.5}
+simg <- img[250:297, 32:47]
+image(x=(250:297)/2, y=(32:47)/2, z=simg, main="Subset of img", xlab="x (mm)", ylab="y (mm)", asp=1)
+```
+
+Below we regularize as described above and show the result as an image. The regularized matrix has full rank--the smallest eigenvalue essentially governed by the applied regularization weights. These weights were chosen by trial and error, but a wide range of weights resulted in correlations between 60% and 68%.
+
+```{r fig.align='center', fig.show='hold', fig.height=4.5}
+S <- genS(dim(simg)[2], dim(simg)[1], .5)
+STS <- t(S) %*% S
+tau <- S %*% as.vector(simg)
+H <- formH(16, 48) # matrix which forms horizontal differences
+V <- formV(16, 48) # matrix with forms vertical differences
+H2 <- summingMatrix(768, 200) %*% H # matrix which sums 200 horizontal differences per row
+V2 <- summingMatrix(768, 200) %*% V # matrix with sums 200 vertical differences per row
+HTH <- t(H2) %*% H2
+VTV <- t(V2) %*% V2
+wH <- 1e-12
+wV <- wH/2
+bhat <- solve(STS + wH*HTH+wV*VTV, t(S) %*% tau) # regularized inversion of tau
+ihat <- as.testImage(matrix(bhat,  48, 16), 1/2) # conversion to image format
+cor(as.vector(bhat), as.vector(simg)) # correlation with image
+plotTestImage(ihat, main=paste("wH = ", wH, "wV = ", wV))
+```
+

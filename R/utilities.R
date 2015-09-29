@@ -303,7 +303,7 @@ plotGrid <- function(n, m, spacing, zero_origin=TRUE, add=FALSE, ...){
 #' @param S an nxm non-negative matrix, Matrix (from package Matrix,) or equivalent
 #' @param b an m long positive vector, a starting position for the solver
 #' @param tof an n-long, positive vector.
-poissonSolver <- function(S, b = runif(ncol(S)), tof, niter=1){
+poissonSolver <- function(S, tof, b = runif(ncol(S)), niter=1){
   K <- colSums(S)
   for(n in 1:niter){
     tbar <- tof/(S %*% b)
