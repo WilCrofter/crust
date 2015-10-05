@@ -50,3 +50,21 @@ recoverImg <- function(coefs, edges, height, width){
   }
   img
 }
+
+# Deprecated stuff related to projecting an image on the orthogonal complement
+# of the stripe space. Actually, it's easy. If img is the image **matrix**, i.e.,
+# its rows are x, and its columns y in a picture of the image, then
+#  1) subtract the mean of each row from the row
+#  2) add the projection of the image on the normalized constant image
+
+formPerp <- function(m){
+  sapply(1:(m-1), function(k)c(rep(0,k-1),1,-1,rep(0,m-(k+1))))
+}
+
+formPerpProj <- function(m){
+  M <- formPerp(m)
+  M %*% solve(t(M) %*% M, t(M))
+}
+
+img1 <- img
+for(i in 1:nrow(img))img1[i,] <- img[i,]-mean(img[i,])
