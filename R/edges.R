@@ -33,6 +33,22 @@ changeOfVariable <- function(edges, height, width){
   P
 }
 
+tileProjection <- function(edges, height, width){
+    by <- dim(edges[[1]])[1]
+    M <- numeric()
+    for(j in seq(1, height, by=by)){
+      for(i in seq(1, width, by=by)){
+        if((by + i - 1 > width) | (by + j-1 > height))next
+        for(edge in edges){
+          temp <- matrix(0, width, height)
+          temp[i:(by+i-1), j:(by+j-1)] <- edge
+          M <- cbind(M, as.vector(temp))
+        }
+      }
+    }
+    M %*% solve(t(M) %*% M) %*% t(M)
+}
+
 recoverImg <- function(coefs, edges, height, width){
   M <- sapply(edges, as.vector)
   by <- dim(edges[[1]])[1]
