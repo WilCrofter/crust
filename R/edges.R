@@ -49,6 +49,17 @@ tileProjection <- function(edges, height, width){
     M %*% solve(t(M) %*% M) %*% t(M)
 }
 
+stripeProjection <- function(height, width){
+  M <- numeric()
+  for(i in 2:width){
+    temp <- matrix(0, width, height)
+    temp[1,] <- 1
+    temp[i,] <- -1
+    M <- cbind(M,as.vector(temp))
+  }
+  M %*% solve(t(M) %*% M) %*% t(M)
+}
+
 recoverImg <- function(coefs, edges, height, width){
   M <- sapply(edges, as.vector)
   by <- dim(edges[[1]])[1]
