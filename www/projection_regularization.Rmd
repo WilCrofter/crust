@@ -1,0 +1,26 @@
+---
+title: "Notes on projection and regularization"
+author: "W. Bauer, R. Grdina"
+date: "October 13, 2015"
+output: html_document
+---
+
+From a strictly least-squares point of view, regularization is required to minimize a quadratic form associated with an ill-conditioned or singular matrix. Least squares is not the only game in town, but is a straightforward way to explore various conditioning strategies. We are currently considering two, both of which orthogonal involve projections. This note is to jot down some well known properties 
+
+Projections of our test images two particular subspaces tend to be fairly good approximations to the images themselves. One such subspace is the orthogonal complement of the ["stripe space"](proj_on_perp_of_stripes.html), the other is spanned by a subspace of k by k tiles. The latter requires some explanation. Suppose an image of h by w pixels is divided into non-overlapping tiles which for the moment we'll assume are k by k squares. Each tile accounts for k^2^ pixels, hence spans a space of dimension k^2^. Suppose that n basis vectors can be found which approximately span the k by k patterns found in most images of interest. These could be the first n principal components of a sample of real k by k patterns for instance. We find that fairly low dimensional subspaces, e.g., 3 basis vectors for a 4 by 4 square which reduces 16 dimensions to 3, approximate our test images fairly well. In effect, this reduces the number of unknowns in the image reconstruction problem.
+
+*If the columns of a matrix, $M$, are linearly independent, $M(M^TM)^{-1}M^T$ is the matrix representing orthogonal projection onto the column space of $M$.*
+
+*Proof:* By definition, orthogonal projection of $b$ on the column space of $M$ is given by $Mx$, i.e., that linear combination of columns, which minimizes $||Mx-b||^2$. By elementary calculus, $x = (M^TM)^{-1}M^Tb,$ where the existence of the inverse is guaranteed by independence of the columns of $M$ and the fact that the null space of $M^TM$ is precisely the same as the null space of $M$, i.e. $\{0\}.$ Thus the projection, $Mx$, is $M(M^TM)^{-1}M^Tb$ and, since $b$ was arbitrary, the projection matrix is $M(M^TM)^{-1}M^T$ as claimed.
+
+*Suppose the columns of $M$ are independent, and let $P = M(M^TM)^{-1}M^T.$ Then $P^2 = P$ and $P^T = P.$ (These, of course, are well known properties of projections.)*
+
+*Proof:* $P^2 = M(M^TM)^{-1}M^TM(M^TM)^{-1}M^T = M(M^TM)^{-1}M^T = P.$
+
+Note that $\left[M(M^TM)^{-1}M^T\right]^T = M\left[(M^TM)^{-1}\right]^TM^T.$ To complete the proof, it then suffices to show that $(M^TM)^{-1}$ is symmetric which can be done as follows:$$\left[(M^TM)^{-1}\right]^T = (M^TM)(M^TM)^{-1}\left[(M^TM)^{-1}\right]^T \\
+= \left[(M^TM)^{-1}(M^TM)^T \{(M^TM)^{-1}\}^T\right]^T \\
+= \left[(M^TM)^{-1}(M^TM)\{(M^TM)^{-1}\}^T\right]^T \\
+= \left[I \{(M^TM)^{-1}\}^T\right]^T \\
+= (M^TM)^{-1}$$since transpose is an involution (is its own inverse.)
+
+Let $P_{SS}$ be projection on the stripe space and $P_{T}$ projection on the "tile space". The the following might be a reasonable regularized quadratic form.$$q(b) = w_1||Sb-\tau||^2 + ||P_Tb - b||^2 + w_2||P_{SS}b||^2,$$where $w_1$ and $w_2$ are weights. I.e., We'd want $Sb$ to approximate measured times of flight, $P_Tb$ to approximate $b,$ and projection on the stripe space to be small. Setting the gradient to zero and using properties of projection operators,$$w_1S^TSb + (I-P_T)b + w_2P_{SS}b = w_1S^T\tau.$$The equation suggests an iteration,$$b^{(n+1)} = w_1S^T\tau - \left(w_1S^TS - P_T + w_2P_{SS}\right)b^{(n)}.$$
