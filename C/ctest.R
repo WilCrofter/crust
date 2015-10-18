@@ -1,3 +1,6 @@
+# MAKE SURE HEIGHT and WEiGHT are properly defined in genS.h file
+# BEFORE you compile with R CMD SHFILE command
+
 # CgenS is the name of the C function contained
 # in the C file genS.c. CgenS takes 2 arguments
 # which follow it in the .C line.
