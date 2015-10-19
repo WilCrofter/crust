@@ -1,9 +1,10 @@
 #include "genS.h"
 
-CgenS(S,gridsize)
+void CgenS(S,gridsize)
 double gridsize,S[][NPIX];
 {
   int i,j,k,ridx,cidx,retval;
+  int segLengths();
   struct point u,v;
   struct segment segs[TOTAL];
 #ifdef DEBUG
@@ -41,10 +42,12 @@ int segLengths(u,v,gridsize,segs)
   double        i1[2],i2[2],kx[WIDTH1],ky[HEIGHT1];
   double        xdiff,ydiff,xlambda[WIDTH1],ylambda[HEIGHT1];
   double        xylambda[TOTAL],lengths[TOTAL];
-  int          i,xylen,xlen,ylen,retval;
+  int           i,xylen,xlen,ylen,retval;
+  int           wCrossings(),removeInvalid(),merge();
   struct point uprime,vprime,crossings[TOTAL],interiors[TOTAL];
   struct ipt   cells[TOTAL];
   int          validCross[TOTAL];
+  void         computeCrossings(),swap();
 
 #ifdef DEBUG
   printf("in segLengths\nu is %f %f %f\nv is %f %f %f\n",
@@ -176,11 +179,9 @@ int segLengths(u,v,gridsize,segs)
   }
 #endif  
   return(xylen-1);
-  /*
-  */
 }//gens
 
-computeCrossings(u,v,lamb,len,cross)
+void computeCrossings(u,v,lamb,len,cross)
 struct point u,v,cross[];
 double lamb[];
 int len;
@@ -193,7 +194,7 @@ int len;
   }
 }//computeCrossings
 
-removeInvalid(cross,valid,xylen)
+int removeInvalid(cross,valid,xylen)
 struct point cross[];
 int valid[],xylen;
 {
@@ -257,7 +258,7 @@ double  scale[],lamb[];
   }
 }
 
-swap(a,b)
+void swap(a,b)
 double *a,*b;
 {
   double tmp;
