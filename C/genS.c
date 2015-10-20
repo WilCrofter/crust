@@ -143,19 +143,37 @@ int segLengths(u,v,gridsize,segs)
   xylen=retval;
 
   for (i=1;i<xylen;i++) 
-    lengths[i-1]=sqrtf( SQR(crossings[i].x-crossings[i-1].x)+
+    lengths[i-1]=sqrt( SQR(crossings[i].x-crossings[i-1].x)+
 		       SQR(crossings[i].y-crossings[i-1].y)+
 		       SQR(crossings[i].z-crossings[i-1].z));
-#ifdef DEBUG
-  for (i=0;i<(xylen-1);i++)
-    printf("length %d is %f\n",i,lengths[i]);
-#endif
 
   for (i=0;i<(xylen-1);i++)
     //    if (lengths[i]==0) validCross[i]=0;
       if (lengths[i]<1e-10) validCross[i]=0;
+
+#ifdef DEBUG
+  printf("Before culling number of  lengths is %d\n",xylen-1);
+  for (i=0;i<(xylen-1);i++)
+    printf("length %d is %e validity is %d\n",i,lengths[i],validCross[i]);
+#endif
+
+
   retval=removeInvalid(&crossings[0],&validCross[0],xylen);
   xylen=retval;
+
+  //now recompute lengths; all should be greater than epsilon
+  for (i=1;i<xylen;i++) 
+    lengths[i-1]=sqrt( SQR(crossings[i].x-crossings[i-1].x)+
+		       SQR(crossings[i].y-crossings[i-1].y)+
+		       SQR(crossings[i].z-crossings[i-1].z));
+
+#ifdef DEBUG
+  printf("After culling length is %d\n",xylen);
+  for (i=0;i<xylen-1;i++) printf("crossing %.10f %.10f %.10f  %e  * %d\n",
+			       crossings[i].x,crossings[i].y,
+    crossings[i].z,lengths[i],validCross[i]);
+  printf("crossing %.10f %.10f %.10f  * %d\n", crossings[i].x,crossings[i].y,crossings[i].z,validCross[i]);
+#endif
 
   for (i=0;i<(xylen-1);i++){
     interiors[i].x=(crossings[i].x+crossings[i+1].x)/2;
@@ -174,6 +192,7 @@ int segLengths(u,v,gridsize,segs)
   }
 
 #ifdef DEBUG
+  printf("Segments\n");
   for (i=0;i<(xylen-1);i++){
     printf("%d   %d %d  %f\n",i,segs[i].prow,segs[i].pcol,segs[i].length);
   }
@@ -200,10 +219,16 @@ int valid[],xylen;
 {
   int i,idx,sum;
   struct point temp[TOTAL];
+#ifdef DEBUG
+  printf("in REMOVE len is %d\n",xylen);
+#endif
 
   sum=0;
   for (i=0;i<xylen;i++) sum+=valid[i];
   if (sum==xylen) return(xylen);  //valid so return
+#ifdef DEBUG
+  printf("in REMOVE about to check %d\n",xylen);
+#endif
 
   idx=0;
   for (i=0;i<(xylen);i++)

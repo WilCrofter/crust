@@ -4,8 +4,8 @@
 //#include <R.h>
 
 #define DEBUG1
-#define HEIGHT 16  //y dim of image
-#define WIDTH  48  //x dim of image
+#define HEIGHT 20  //y dim of image
+#define WIDTH  60  //x dim of image
 
 #define SQHT   (HEIGHT*HEIGHT)
 #define NPIX   (HEIGHT*WIDTH)
