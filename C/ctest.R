@@ -18,7 +18,7 @@
 # this .so file, e.g. dyn.load("C/genS.so")
 dyn.load("C/genS.so")
 genStest <- function(height,width,gridsize){
- # SfromR <- genS(height,width,.5)
-  SfromC <- .C("CgenS", S=double(height^3*width),.5)
+  #SfromR <- genS(height,width,gridsize)
+  SfromC <- .C("CgenS", S=double(height^3*width),gridsize)
   matrix((SfromC["S"])[[1]],height^2,height*width,byrow=TRUE)
 }
