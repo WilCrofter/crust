@@ -1,5 +1,5 @@
 ---
-title: "Suite of test from thigh phantom"
+title: "Suite of tests from thigh phantom"
 author: "W. Bauer"
 date: "October 24, 2015"
 output: html_document

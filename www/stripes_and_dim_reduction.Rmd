@@ -1,0 +1,17 @@
+---
+title: "Stripe space and dimension reduction"
+author: "W. Bauer, R. Grdina"
+date: "October 25, 2015"
+output: html_document
+---
+
+### Terminology
+
+The *null space* of a matrix, $S$, consists of all vectors, $v$, such that $Sv = 0$. It is called a *space* because it is closed under vector addition and multiplication by scalars. That is, if $Sv_i = 0$ for $i=1, \ldots, n$ and $\alpha_1, \ldots \alpha_n$ are scalars, then $S\(\alpha_1v_1 + \ldots + \alpha_nv_n)= 0$ as well. This is easily seen since$$S(\alpha_1v_1 + \ldots + \alpha_nv_n)= \alpha_1Sv_1 + \ldots + \alpha_nSv_n \\ = \alpha_10 + \ldots + \alpha_n0 \\ = 0.$$
+
+A matrix is *singular* if its null space includes vectors other than the vector of all zeros. If a matrix is singular, then its null space is of infinite extent because, for example, you can multiply by an arbitrarily large scalar and remain in the space.
+
+The tomography problems of interest here are characterized by incomplete information. That is to say, the measured data does not uniquely determine an image. In the formal terminology of the preceding paragraphs, the system matrices of interest are *always* singular. Hence, if $S$ is a system matrix and $Sb = \tau$, then for any $v$ in the null space of $S$,$$S(b+v)=Sb+Sv=Sb+0=\tau.$$Thus there is an infinite set of "images" which result in precisely the same times of flight.
+
+The total time of flight along a path is unaffected if time is subtracted from one segment of the path and the same amount added at another. This is the origin of the so-called "stripe space" which was explained in detail in a [previous note](S_kernel_etc.html). The stripe space is always contained in the null space of the associated system matrix, though the null space itself may be strictly larger. Thus if $v$ is in the stripe space of $S$, $S(b+v)=Sb$.
+
