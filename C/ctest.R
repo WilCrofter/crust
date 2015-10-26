@@ -16,9 +16,15 @@
 # This last must be dynamically loaded from R using
 # dyn.load("genS.so"). Make sure you specify the correct path to 
 # this .so file, e.g. dyn.load("C/genS.so")
+
+#dyn.load("C/genS.old.so")
 dyn.load("C/genS.so")
 genStest <- function(height,width,gridsize){
-  #SfromR <- genS(height,width,gridsize)
-  SfromC <- .C("CgenS", S=double(height^3*width),gridsize)
+  # SfromR <- genS(height,width,gridsize)
+  # The following shouldn't have worked since R calls C by passing addresses, not values
+  # and oldCgenS expected a value for gridsize, not a pointer!!
+  # SfromC <- .C("oldCgenS", S=double(height^3*width),gridsize)
+  
+  SfromC <- .C("CgenS",S=double(height^3*width),as.integer(height),as.integer(width),as.double(gridsize))
   matrix((SfromC["S"])[[1]],height^2,height*width,byrow=TRUE)
 }

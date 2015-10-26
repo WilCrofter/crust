@@ -1,17 +1,24 @@
 #include "genS.h"
 
-void CgenS(S,height,width,gridsize)
-double gridsize,S[];
-int height,width;
+void CgenS(S,pheight,pwidth,pgridsize)
+double *pgridsize,S[];
+int *pheight,*pwidth;
 {
   int i,j,k,ridx,cidx,retval;
   int total,npix;
+  int height,width;
   int segLengths();
+  double gridsize;
   struct point u,v;
   struct segment *segs;
+
 #ifdef DEBUG
   printf("Hello height is %d width is %d grid is %f\n",height,width,gridsize);
 #endif
+
+  height = *pheight;
+  width = *pwidth;
+  gridsize = *pgridsize;
 
   npix = height*width;
   total = (height+width+2);
@@ -46,15 +53,16 @@ int segLengths(u,v,height,width,gridsize,segs)
      struct point u,v;
      double gridsize;
      struct segment segs[];
+     int    height,width;
 {
   double        i1[2],i2[2],*kx,*ky;
   double        xdiff,ydiff,*xlambda,*ylambda;
-  double        xylambda[TOTAL],lengths[TOTAL];
+  double        *xylambda,*lengths;
   int           i,xylen,xlen,ylen,retval;
   int           total;
   int           wCrossings(),removeInvalid(),merge();
-  struct point uprime,vprime,crossings[TOTAL],interiors[TOTAL];
-  int          validCross[TOTAL];
+  struct point uprime,vprime,*crossings,*interiors;
+  int          *validCross;
   void         computeCrossings(),swap();
 
 #ifdef DEBUG
@@ -68,6 +76,11 @@ int segLengths(u,v,height,width,gridsize,segs)
   ky = calloc(height+1,sizeof(ky[0]));
   xlambda = calloc(width+1,sizeof(xlambda[0]));
   ylambda = calloc(width+1,sizeof(ylambda[0]));
+  xylambda = calloc(total,sizeof(xylambda[0]));
+  lengths = calloc(total,sizeof(lengths[0]));
+  crossings = calloc(total,sizeof(crossings[0]));
+  interiors = calloc(total,sizeof(interiors[0]));
+  validCross = calloc(total,sizeof(validCross[0]));
 
   xdiff = v.x-u.x;
   ydiff = v.y-u.y;
@@ -90,46 +103,46 @@ int segLengths(u,v,height,width,gridsize,segs)
 
   if ((i1[0]>=i2[1]) || (i2[0]>=i1[1])) {return(2);}
 
-  for (i=0;i<TOTAL;i++) validCross[i]=0;
+  for (i=0;i<total;i++) validCross[i]=0;
 
   //set up grid coordinates
   kx[0]=ky[0]=0;
-  for (i=1;i<=WIDTH;i++) kx[i]=kx[i-1]+gridsize;
-  for (i=1;i<=HEIGHT;i++) ky[i]=ky[i-1]+gridsize;
+  for (i=1;i<=width;i++) kx[i]=kx[i-1]+gridsize;
+  for (i=1;i<=height;i++) ky[i]=ky[i-1]+gridsize;
 
   if (u.x!=v.x){
     uprime.x = 0; 
     uprime.y = u.y+ydiff*(-u.x/xdiff); 
     uprime.z = u.z+(v.z-u.z)*(-u.z)/xdiff;
-    vprime.x = WIDTH*gridsize;
-    vprime.y = u.y+ydiff*(WIDTH*gridsize-u.x)/xdiff;
-    vprime.z = u.z+(v.z-u.z)*(WIDTH*gridsize-u.x)/xdiff;
+    vprime.x = width*gridsize;
+    vprime.y = u.y+ydiff*(width*gridsize-u.x)/xdiff;
+    vprime.z = u.z+(v.z-u.z)*(width*gridsize-u.x)/xdiff;
   }
   else {//x coords are same so y coords are diff
     uprime.x = u.x + xdiff*(-u.y/ydiff);
     uprime.y = 0;
     uprime.z = u.z+(v.z-u.z)*(-u.y)/ydiff;
-    vprime.x = u.x + xdiff*(HEIGHT*gridsize-u.y)/ydiff; 
-    vprime.y = HEIGHT*gridsize; 
-    vprime.z = u.z+(v.z-u.z)*(HEIGHT*gridsize-u.y)/ydiff;
+    vprime.x = u.x + xdiff*(height*gridsize-u.y)/ydiff; 
+    vprime.y = height*gridsize; 
+    vprime.z = u.z+(v.z-u.z)*(height*gridsize-u.y)/ydiff;
   }
 
 
-  retval=wCrossings(uprime,vprime,0,kx,WIDTH1,xlambda);//rgr
+  retval=wCrossings(uprime,vprime,0,kx,width+1,xlambda);//rgr
   if (retval==(-2)) 
     xlen=0;
   else 
-    xlen=WIDTH1;
+    xlen=width+1;
 
-  retval=wCrossings(uprime,vprime,1,ky,HEIGHT1,ylambda);//rgr
+  retval=wCrossings(uprime,vprime,1,ky,height+1,ylambda);//rgr
   if (retval==(-3)) 
     ylen=0;
   else 
-    ylen=HEIGHT1;
+    ylen=height+1;
   
 #ifdef DEBUG
-  if (xlen>0) for (i=0;i<=WIDTH;i++) printf("xlamba %.10f\n",xlambda[i]);
-  if (ylen>0) for (i=0;i<=HEIGHT;i++) printf("ylamba %.10f\n",ylambda[i]);
+  if (xlen>0) for (i=0;i<=width;i++) printf("xlamba %.10f\n",xlambda[i]);
+  if (ylen>0) for (i=0;i<=height;i++) printf("ylamba %.10f\n",ylambda[i]);
 #endif
 
   xylen = merge(xlambda,ylambda,xlen,ylen,xylambda);
@@ -139,11 +152,11 @@ int segLengths(u,v,height,width,gridsize,segs)
   for (i=0;i<xylen;i++) printf("xylamba %.10f\n",xylambda[i]);
 #endif
 
-  computeCrossings(uprime,vprime,xylambda,xylen,&crossings[0]);
+  computeCrossings(uprime,vprime,xylambda,xylen,crossings);
   //check for valid crossings
   for (i=0;i<xylen;i++)
-    if ((crossings[i].x>=0)&&(crossings[i].x<=(WIDTH*gridsize))&&
-	(crossings[i].y>=0)&&(crossings[i].y<=(HEIGHT*gridsize)))
+    if ((crossings[i].x>=0)&&(crossings[i].x<=(width*gridsize))&&
+	(crossings[i].y>=0)&&(crossings[i].y<=(height*gridsize)))
       validCross[i]=1;
     else
       validCross[i]=0;
@@ -154,7 +167,7 @@ int segLengths(u,v,height,width,gridsize,segs)
 #endif
 
   //remove invalid crossings
-  retval=removeInvalid(&crossings[0],&validCross[0],xylen);
+  retval=removeInvalid(crossings,validCross,height,width,xylen);
   xylen=retval;
 
   for (i=1;i<xylen;i++) 
@@ -173,7 +186,7 @@ int segLengths(u,v,height,width,gridsize,segs)
 #endif
 
 
-  retval=removeInvalid(&crossings[0],&validCross[0],xylen);
+  retval=removeInvalid(crossings,validCross,height,width,xylen);
   xylen=retval;
 
   //now recompute lengths; all should be greater than epsilon
@@ -217,6 +230,11 @@ int segLengths(u,v,height,width,gridsize,segs)
   free(ky);
   free(xlambda);
   free(ylambda);
+  free(xylambda);
+  free(lengths);
+  free(crossings);
+  free(interiors);
+  free(validCross);
 
   return(xylen-1);
 }//segLengths
@@ -234,15 +252,18 @@ int len;
   }
 }//computeCrossings
 
-int removeInvalid(cross,valid,xylen)
+int removeInvalid(cross,valid,height,width,xylen)
 struct point cross[];
-int valid[],xylen;
+int valid[],height,width,xylen;
 {
-  int i,idx,sum;
-  struct point temp[TOTAL];
+  int i,idx,sum,total;
+  struct point *temp;
 #ifdef DEBUG
   printf("in REMOVE len is %d\n",xylen);
 #endif
+
+  total = height + width + 2;
+  temp = calloc(total,sizeof(temp[0]));
 
   sum=0;
   for (i=0;i<xylen;i++) sum+=valid[i];
@@ -265,6 +286,8 @@ int valid[],xylen;
     cross[i].z=temp[i].z;
     valid[i]=1;
   }//i
+
+  free(temp);
 
   return(idx);
 }

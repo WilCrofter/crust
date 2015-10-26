@@ -1,6 +1,23 @@
-#include "genS.h"
+#include <stdio.h>
+#include <stdlib.h>
+#include <math.h>
 
-void CgenS(S,gridsize)
+#define DEBUG1
+#define HEIGHT 8  //y dim of image
+#define WIDTH  12  //x dim of image
+
+#define SQHT (HEIGHT*HEIGHT)
+#define NPIX (HEIGHT*WIDTH)
+#define HEIGHT1 (HEIGHT+1)
+#define WIDTH1  (WIDTH+1)
+#define TOTAL   (HEIGHT1+WIDTH1)
+#define SQR(A)  ((A)*(A))
+struct point{double x; double y; double z;};
+struct ipt{int x; int y; int z;};
+struct segment{int prow, pcol; double length;};
+
+
+void oldCgenS(S,gridsize)
 double gridsize,S[][NPIX];
 {
   int i,j,k,ridx,cidx,retval;
@@ -351,3 +368,18 @@ int cmpfunc( const void  *a, const void *b){
   if ( (*fb) > *fa) return(-1);
   if ( (*fb)==(*fa)) return(0);
 }
+/*
+void main(){
+  double S[64][96];
+  int i,j;
+  oldCgenS(S,8,12,.5);
+  for (i=0;i<64;i++){
+    printf("Row %d\n",i);
+    for (j=0;j<96;j++) 
+      if (S[i][j]!=0)
+	printf("%d %f\n",j,S[i][j]);
+    printf("\n");
+  }
+
+}
+*/

@@ -10,8 +10,14 @@ main(){
   }
   */
   double S[64][96];
-  int i,j;
-  CgenS(S,8,12,1.);
+  int i,j,ht,wid;
+  double grid;
+
+  ht=8;
+  wid=12;
+  grid=.5;
+
+  CgenS(S,&ht,&wid,&grid);
   for (i=0;i<64;i++){
     printf("Row %d\n",i);
     for (j=0;j<96;j++) 
