@@ -2,3 +2,5 @@
 .Rhistory
 .RData
 crust.Rproj
+C/*.o
+C/*.so
