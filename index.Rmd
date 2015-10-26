@@ -4,6 +4,7 @@ output: html_document
 ---
 
 #### Notes in reverse chronological order.
+* [Stripe space and dimension reduction](www/stripes_and_dim_reduction.html)
 * [Some notes on projection and regularization](www/projection_regularization.html)
 * [(Easy) projection on the orthogonal complement of the stripe space](www/proj_on_perp_of_stripes.html)
 * [Regularization by normally distributed image statistics](www/inversion_test_3.html)
