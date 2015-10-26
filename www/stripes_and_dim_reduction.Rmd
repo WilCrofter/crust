@@ -7,7 +7,7 @@ output: html_document
 
 ### Terminology
 
-The *null space* of a matrix, $S$, consists of all vectors, $v$, such that $Sv = 0$. It is called a *space* because it is closed under vector addition and multiplication by scalars. That is, if $Sv_i = 0$ for $i=1, \ldots, n$ and $\alpha_1, \ldots \alpha_n$ are scalars, then $S\(\alpha_1v_1 + \ldots + \alpha_nv_n)= 0$ as well. This is easily seen since$$S(\alpha_1v_1 + \ldots + \alpha_nv_n)= \alpha_1Sv_1 + \ldots + \alpha_nSv_n \\ = \alpha_10 + \ldots + \alpha_n0 \\ = 0.$$
+The *null space* of a matrix, $S$, consists of all vectors, $v$, such that $Sv = 0$. It is called a *space* because it is closed under vector addition and multiplication by scalars. That is, if $Sv_i = 0$ for $i=1, \ldots, n$ and $\alpha_1, \ldots \alpha_n$ are scalars, then $S(\alpha_1v_1 + \ldots + \alpha_nv_n)= 0$ as well. This is easily seen since$$S(\alpha_1v_1 + \ldots + \alpha_nv_n)= \alpha_1Sv_1 + \ldots + \alpha_nSv_n \\ = \alpha_10 + \ldots + \alpha_n0 \\ = 0.$$
 
 A matrix is *singular* if its null space includes vectors other than the vector of all zeros. If a matrix is singular, then its null space is of infinite extent because, for example, you can multiply by an arbitrarily large scalar and remain in the space.
 
@@ -55,7 +55,7 @@ par(mfrow=c(1,1))
 
 The correlation of the image with its projection is about 75%. That is, about 25% of the image lies in the stripe space. As shown above, the original image and its projection will yield precisely the same times of flight. Hence, time of flight data contain no information about the component of an image which lies in the stripe space. With time of flight data alone, the best we can hope for is recovery of the projection of an image on the orthogonal complement of the stripe space. 
 
-In this case, however, there are about 6 times as many unknowns, 61x365 pixels, as there are equations, 61x61 times of flight. The stripe space has dimension 364, hence its orthogonal complement has dimension 61x365-364. Thus, projection on the orthogonal complement reduces the effective number of unknowns by very little, from 61x365 to 61x365-64 ~ 60x365. The ratio of unknowns to equations is barely changed.
+In this case, however, there are about 6 times as many unknowns, 61x365 pixels, as there are equations, 61x61 times of flight. The stripe space has dimension 364, hence its orthogonal complement has dimension 61x365-364. Thus, projection on the orthogonal complement reduces the effective number of unknowns by very little, from 61x365 to 61x365-364 ~ 60x365. The ratio of unknowns to equations is barely changed.
 
 In the projected image, the general anatomy is apparent despite the artifacts. If the projected image could be even approximately recovered, there's the chance a secondary procedure could improve it significantly. To that end, we would like to discover a space of low dimension in which good approximations to a projected image could be found.
 
