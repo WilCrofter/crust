@@ -1,14 +1,11 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
-//#include <R.h>
 
 #define DEBUG1
 #define HEIGHT 8  //y dim of image
 #define WIDTH  12  //x dim of image
 
-#define SQHT   (HEIGHT*HEIGHT)
-#define NPIX   (HEIGHT*WIDTH)
 #define HEIGHT1 (HEIGHT+1)
 #define WIDTH1  (WIDTH+1)
 #define TOTAL   (HEIGHT1+WIDTH1)
