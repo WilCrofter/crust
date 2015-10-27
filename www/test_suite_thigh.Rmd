@@ -12,6 +12,8 @@ The first task is to identify rectangular sections. This is a trial and error pr
 ```{r fig.align='center', fig.width=4.4, message=FALSE, echo=FALSE}
 source("../R/inkscape_utils.R")
 
+phantom <- importIPhantom("../data/thigh_inkscape.csv")
+
 # Utility to compute base and height in pixels, given a rectangle and gridsize.
 # It was used to ensure that heights in pixels would be powers of 2 when images
 # were pixelated. The height in pixels will be equal to the number of transducers
@@ -29,11 +31,29 @@ pixi <- function(r, gridsize){
   hi <- gridsize*hv/(sqrt(sum(hv^2)))
   c(h, b)
 }
+plotIPhantom(phantom, main="Scans 1-4")
+scan_1 <- computeRectangle(phantom, c(100,100), pi/4, 127*.23)
+overlayRectangle(scan_1, lwd=3)
+scan_2 <- computeRectangle(phantom, c(100,100), pi/4 + pi/8, 127*.23)
+overlayRectangle(scan_2, lwd=3, border=2)
+scan_3 <- computeRectangle(phantom, c(90, 80), 0, 127*.23)
+overlayRectangle(scan_3, lwd=3, border=3)
+scan_4 <- computeRectangle(phantom, c(180, 125), pi/8, 127*.23)
+overlayRectangle(scan_4, lwd=3, border=4)
 
-rect1 <- computeRectangle(phantom, c(100,100), pi/4, 127*.23)
+plotIPhantom(phantom, main="Scans 6-10")
+scan_5 <- computeRectangle(phantom, c(125,140), pi/2+pi/4+pi/16, 127*.23)
+overlayRectangle(scan_5, lwd=3, border=1)
+scan_6 <- computeRectangle(phantom, c(130,125), pi/2+pi/4-pi/8, 127*.23)
+overlayRectangle(scan_6, lwd=3, border=2)
+scan_7 <- computeRectangle(phantom, c(130,125), pi/2-pi/16, 127*.23)
+overlayRectangle(scan_7, lwd=3, border=3)
+scan_8 <- computeRectangle(phantom, c(180,125), pi/4+pi/16, 127*.23)
+overlayRectangle(scan_8, lwd=3, border=4)
+
 ```
 
-
-phantom <- importIPhantom("../data/thigh_inkscape.csv")
+```{r eval=FALSE}
+phantom <- importIPhantom("data/thigh_inkscape.csv")
 plotIPhantom(phantom)
 ```
