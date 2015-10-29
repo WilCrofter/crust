@@ -7,30 +7,14 @@ output: html_document
 
 This note is to document construction of a test suite of images, system matrices, and time of flight data based on a [phantom thigh section](thigh_working_prototype.html). The suite will not involve misalignment or noise, at least initially. It will involve rectangular sections at various positions and orientations and digitized at various resolutions (pixel sizes.)
 
-The first task is to identify rectangular sections. This is a trial and error process, and was performed off-line. Resulting sections are shown below in various colors.
+The first task is to identify rectangular sections. This is a trial and error process, and was performed off-line. Resulting sections are shown below in various colors. All are 30 mm in height, which is approximately that of a 128 element ultrasound probe.
 
 ```{r fig.align='center', fig.width=4.4, message=FALSE, echo=FALSE}
 source("../R/inkscape_utils.R")
 
 phantom <- importIPhantom("../data/thigh_inkscape.csv")
 
-# Utility to compute base and height in pixels, given a rectangle and gridsize.
-# It was used to ensure that heights in pixels would be powers of 2 when images
-# were pixelated. The height in pixels will be equal to the number of transducers
-# when a system matrix is calculated via genS or its C counterpart.
-pixi <- function(r, gridsize){
-  # assuming rectangle corners are arranged in clockwise order,
-  # compute oriented base and height
-  bv <- r[2,]-r[1,]
-  hv <- r[4,]-r[1,]
-  # rectangle dimensions in integer multiples of gridsize
-  b <- ceiling(.5+sqrt(sum(bv^2))/gridsize)
-  h <- ceiling(.5+sqrt(sum(hv^2))/gridsize)
-  # gridsize increments for base and height
-  bi <- gridsize*bv/(sqrt(sum(bv^2)))
-  hi <- gridsize*hv/(sqrt(sum(hv^2)))
-  c(h, b)
-}
+
 plotIPhantom(phantom, main="Scans 1-4")
 scan_1 <- computeRectangle(phantom, c(100,100), pi/4, 127*.23)
 overlayRectangle(scan_1, lwd=3)
@@ -53,7 +37,63 @@ overlayRectangle(scan_8, lwd=3, border=4)
 
 ```
 
-```{r eval=FALSE}
-phantom <- importIPhantom("data/thigh_inkscape.csv")
-plotIPhantom(phantom)
+The plan is to produce pixelated images of each rectangular section at various resolutions (pixel sizes.) Heights in pixels correspond to the number of transducers in a probe. These should be powers of 2 ranging from 16 to 128. Controlling the height in pixels is a bit tricky. The following checks a calculation to do so.
+
+```{r echo=FALSE}
+local({
+# Utility to compute base and height in pixels, given a rectangle and gridsize.
+# It was used to ensure that heights in pixels would be powers of 2 when images
+# were pixelated. The height in pixels will be equal to the number of transducers
+# when a system matrix is calculated via genS or its C counterpart.
+pixi <- function(r, gridsize){
+  # assuming rectangle corners are arranged in clockwise order,
+  # compute oriented base and height
+  bv <- r[2,]-r[1,]
+  hv <- r[4,]-r[1,]
+  # rectangle dimensions in integer multiples of gridsize
+  b <- ceiling(.5+sqrt(sum(bv^2))/gridsize)
+  h <- ceiling(.5+sqrt(sum(hv^2))/gridsize)
+  # gridsize increments for base and height
+  bi <- gridsize*bv/(sqrt(sum(bv^2)))
+  hi <- gridsize*hv/(sqrt(sum(hv^2)))
+  c(h, b)
+}
+
+# Utility to calculate gridsize in mm which will give a certain height, h, in pixels
+# for a given rectangl, r.
+calcGridSize <- function(r, h){
+  hv <- r[4,] - r[1,]
+  lhv <- sqrt(sum(hv^2))
+  mean(c(lhv/(h-.5), lhv/(h-1.5)))
+}
+
+scans <- paste0("scan_",1:8)
+target_height <- integer()
+actual_height <- integer()
+grid_size <- numeric()
+for(n in 1:8){
+  scan <- get(scans[n], envir=globalenv())
+  for(res in 2^(7:4)){
+    target_height <- c(target_height, res)
+    g <- calcGridSize(scan, res)
+    grid_size <- c(grid_size, g)
+    actual_height <- c(actual_height, pixi(scan, g)[1])
+  }
+}
+data.frame(scan=rep(scans,each=4), target_height=target_height, actual_height=actual_height, grid_size_mm = grid_size)
+})
 ```
+
+Several minutes of run time are required to produce pixelated images. Hence, the suite was produced off line by a function in file `thigh_script.R`.
+
+```{r echo=FALSE}
+readScan <- function(scan, resolution){
+  temp <- as.matrix(read.csv(paste0("../data/scan_",scan,"_",resolution,".csv"), 
+                             as.is=TRUE, comment.char = "#"))
+  colnames(temp) <- gsub("X","",colnames(temp))
+  temp
+}
+
+
+```
+
