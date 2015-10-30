@@ -5,16 +5,16 @@ date: "October 24, 2015"
 output: html_document
 ---
 
-This note is to document construction of a test suite of images, system matrices, and time of flight data based on a [phantom thigh section](thigh_working_prototype.html). The suite will not involve misalignment or noise, at least initially. It will involve rectangular sections at various positions and orientations and digitized at various resolutions (pixel sizes.)
+This note documents construction of a test suite of pixelated images based on a [phantom thigh section](thigh_working_prototype.html). The suite does not involve misalignment or noise. It involves rectangular sections at a total of 8 positions and orientations, each digitized at resolutions (pixel sizes) corresponding to transducer arrays of 16, 32, 64, and 128 elements.
 
-The first task is to identify rectangular sections. This is a trial and error process, and was performed off-line. Resulting sections are shown below in various colors. All are 30 mm in height, which is approximately that of a 128 element ultrasound probe.
+The first task was to identify rectangular sections. This was a trial and error process, performed off-line. Resulting sections are shown below in various colors. All are 30 mm in height, which is approximately that of a 128 element ultrasound probe.
 
-```{r fig.align='center', fig.width=4.4, message=FALSE, echo=FALSE}
+```{r fig.align='center', message=FALSE, echo=FALSE, fig.width=8}
 source("../R/inkscape_utils.R")
 
 phantom <- importIPhantom("../data/thigh_inkscape.csv")
 
-
+par(mfrow=c(1,2))
 plotIPhantom(phantom, main="Scans 1-4")
 scan_1 <- computeRectangle(phantom, c(100,100), pi/4, 127*.23)
 overlayRectangle(scan_1, lwd=3)
@@ -34,10 +34,10 @@ scan_7 <- computeRectangle(phantom, c(130,125), pi/2-pi/16, 127*.23)
 overlayRectangle(scan_7, lwd=3, border=3)
 scan_8 <- computeRectangle(phantom, c(180,125), pi/4+pi/16, 127*.23)
 overlayRectangle(scan_8, lwd=3, border=4)
-
+par(mfrow=c(1,1))
 ```
 
-The plan is to produce pixelated images of each rectangular section at various resolutions (pixel sizes.) Heights in pixels correspond to the number of transducers in a probe. These should be powers of 2 ranging from 16 to 128. Controlling the height in pixels is a bit tricky. The following checks a calculation to do so.
+Controlling an image's height in pixels is a bit tricky. The following checks a calculation to do so.
 
 ```{r echo=FALSE}
 local({
@@ -84,16 +84,31 @@ data.frame(scan=rep(scans,each=4), target_height=target_height, actual_height=ac
 })
 ```
 
-Several minutes of run time are required to produce pixelated images. Hence, the suite was produced off line by a function in file `thigh_script.R`.
+Several minutes of run time were required to produce pixelated images. Hence, the suite was produced off line by a function in file `thigh_script.R`. Pixels were labeled by tissue type so that speeds of sound can be varied dynamically. The images themselves are in this project's `data` subdirectory and are identified by scan number and resolution. For instance, `scan_6_64.csv` corresponds to the 6^th^ rectangular section with a grid size corresponding to 64 transducers spread over a 30 cm height. Scan 6 is shown at 4 resolutions below. 
 
-```{r echo=FALSE}
-readScan <- function(scan, resolution){
-  temp <- as.matrix(read.csv(paste0("../data/scan_",scan,"_",resolution,".csv"), 
-                             as.is=TRUE, comment.char = "#"))
-  colnames(temp) <- gsub("X","",colnames(temp))
-  temp
+```{r echo=FALSE, fig.align='center', fig.show='hold', fig.height=3}
+source("../R/thigh_script.R")
+for(res in 2^(7:4)){
+  img <- readScan(6,res,datadir="../data")
+  image(x = .23 * seq(0, nrow(img)-1)*128.0/res,
+        y = .23 * seq(0, ncol(img)-1)*128.0/res,
+        z = img, xlab="x (mm)", ylab="y (mm)", 
+        main = paste0("Scan 6, ", res, " transducers"), asp=1)
 }
 
+```
 
+File `thigh_script.R` contains two utilities whose use is illustrated below.
+
+```{r fig.align='center', fig.show='hold', fig.height=3}
+# Read scan 3, resolution 32
+img <- readScan(3, 32, datadir="../data")
+# Convert tissue identifiers to slowness values
+img <- tissue2Slowness(img, datadir = "../data")
+# display the result
+image(x = 4*.23 * seq(0, nrow(img)-1),
+        y = 4* .23 * seq(0, ncol(img)-1),
+        z = img, xlab="x (mm)", ylab="y (mm)", 
+        main = paste0("Scan 3, ", 32, " transducers (slowness)"), asp=1)
 ```
 
