@@ -5,10 +5,12 @@ date: "October 5, 2015"
 output: html_document
 ---
 
-This note records an easy way to project an image on the orthogonal complement of the stripe space. Recall that, if `img` represents an image in memory, its rows will span the x direction and its columns the y direction when displayed. The algorithm consists of two steps:
+NOTE: there was an error in the original as indicated by the strikethroughs below.
+
+This note records an easy way to project an image on the orthogonal complement of the stripe space. Recall that, if `img` represents an image in memory, its rows will span the x direction and its columns the y direction when displayed. The algorithm consists of ~~two steps:~~ the following step:
 
 1. subtract the mean of each row from the row
-2. add the projection of the image on the normalized constant image
+2. ~~add the projection of the image on the normalized constant image~~
 
 We illustrate below:
 
@@ -24,10 +26,10 @@ height <- ncol(img)
 # Subtract row means
 img1 <- img
 for(i in 1:nrow(img))img1[i,] <- img[i,]-mean(img[i,])
-# Add projection on normalized constant image
-M <- matrix(1/sqrt(height*width), width, height)
-img1 <- img1 + M * sum(M*img)
-# Diplay:
+# ERROR in original: Add projection on normalized constant image
+# M <- matrix(1/sqrt(height*width), width, height)
+# img1 <- img1 + M * sum(M*img)
+# Display:
 par(mfrow=c(2,1))
 image(x=.5*(1:width), y=.5*(1:height), z=img, xlab="x (mm)", ylab="y (mm)", main="Original image")
 image(x=.5*(1:width), y=.5*(1:height), z=img1, xlab="x (mm)", ylab="y (mm)", main="Projected image")
