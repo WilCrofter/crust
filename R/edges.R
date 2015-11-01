@@ -26,6 +26,7 @@ formTiling <- function(edges, height, width){
       }
     }
   }
+  M
 }
 
 # Form the projection matrix associated with a tiling
