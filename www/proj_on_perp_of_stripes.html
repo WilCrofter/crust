@@ -67,11 +67,10 @@ img {
 </div>
 
 
-<p>NOTE: there was an error in the original as indicated by the strikethroughs below.</p>
-<p>This note records an easy way to project an image on the orthogonal complement of the stripe space. Recall that, if <code>img</code> represents an image in memory, its rows will span the x direction and its columns the y direction when displayed. The algorithm consists of <del>two steps:</del> the following step:</p>
+<p>This note records an easy way to project an image on the orthogonal complement of the stripe space. Recall that, if <code>img</code> represents an image in memory, its rows will span the x direction and its columns the y direction when displayed. The algorithm consists of two steps:</p>
 <ol style="list-style-type: decimal">
 <li>subtract the mean of each row from the row</li>
-<li><del>add the projection of the image on the normalized constant image</del></li>
+<li>add the projection of the image on the normalized constant image</li>
 </ol>
 <p>We illustrate below:</p>
 <pre class="r"><code>img &lt;- as.matrix(read.csv(&quot;../data/pixelized_thigh_section.csv&quot;, comment.char = &quot;#&quot;))
@@ -85,10 +84,10 @@ height &lt;- ncol(img)
 # Subtract row means
 img1 &lt;- img
 for(i in 1:nrow(img))img1[i,] &lt;- img[i,]-mean(img[i,])
-# ERROR in original: Add projection on normalized constant image
-# M &lt;- matrix(1/sqrt(height*width), width, height)
-# img1 &lt;- img1 + M * sum(M*img)
-# Display:
+# Add projection on normalized constant image
+M &lt;- matrix(1/sqrt(height*width), width, height)
+img1 &lt;- img1 + M * sum(M*img)
+# Diplay:
 par(mfrow=c(2,1))
 image(x=.5*(1:width), y=.5*(1:height), z=img, xlab=&quot;x (mm)&quot;, ylab=&quot;y (mm)&quot;, main=&quot;Original image&quot;)
 image(x=.5*(1:width), y=.5*(1:height), z=img1, xlab=&quot;x (mm)&quot;, ylab=&quot;y (mm)&quot;, main=&quot;Projected image&quot;)
