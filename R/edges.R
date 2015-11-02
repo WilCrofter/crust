@@ -8,23 +8,36 @@ edges <- list(m1=matrix(1,4,4), m2=matrix(c(1,1,-1,-1), 4, 4), m3=t(matrix(c(1,1
 #   }
 # }
 
-
-tileProjection <- function(edges, height, width){
-    by <- dim(edges[[1]])[1]
-    M <- numeric()
-    for(j in seq(1, height, by=by)){
-      for(i in seq(1, width, by=by)){
-        if((by + i - 1 > width) | (by + j-1 > height))next
-        for(edge in edges){
-          temp <- matrix(0, width, height)
-          temp[i:(by+i-1), j:(by+j-1)] <- edge
-          M <- cbind(M, as.vector(temp))
-        }
+# Given a list of nxn "tiles" meant to describe similarly shaped regions
+# of an image, tesselate the image by nxn squares, then for each tile and
+# square, form an image of just that tile in that square and convert that
+# image to a vector with as.vector. Return a matrix whose columns are the
+# vectors so formed.
+formTiling <- function(edges, height, width){
+  by <- dim(edges[[1]])[1]
+  M <- numeric()
+  for(j in seq(1, height, by=by)){
+    for(i in seq(1, width, by=by)){
+      if((by + i - 1 > width) | (by + j-1 > height))next
+      for(edge in edges){
+        temp <- matrix(0, width, height)
+        temp[i:(by+i-1), j:(by+j-1)] <- edge
+        M <- cbind(M, as.vector(temp))
       }
     }
+  }
+  M
+}
+
+# Form the projection matrix associated with a tiling
+# as described in formTiling.
+tileProjection <- function(edges, height, width){
+    M <- formTiling(edges, height, width)
     M %*% solve(t(M) %*% M) %*% t(M)
 }
 
+# Form the matrix representing projection onto the
+# stripe space.
 stripeProjection <- function(height, width){
   M <- numeric()
   for(i in 2:width){
@@ -34,6 +47,16 @@ stripeProjection <- function(height, width){
     M <- cbind(M,as.vector(temp))
   }
   M %*% solve(t(M) %*% M) %*% t(M)
+}
+
+# Given a list of nxn tiles as described in function formTiling,
+# apply that function followed by projection on the orthogonal
+# complement of the stripe space. The result is a matrix whose
+# columns are projections of the given tiles on the orthogonal
+# complement of the stripe space.
+formPerpTiling <- function(edges, height, width){
+  M <- formTiling(edges, height, width)
+  M - stripeProjection(height, width)
 }
 
 tryall <- function(tau, simg, S, ITP, SP, tWt, sWt){
