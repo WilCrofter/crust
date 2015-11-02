@@ -12,13 +12,14 @@ int *pheight,*pwidth;
   struct point u,v;
   struct segment *segs;
 
-#ifdef DEBUG
-  printf("Hello height is %d width is %d grid is %f\n",height,width,gridsize);
-#endif
 
   height = *pheight;
   width = *pwidth;
   gridsize = *pgridsize;
+
+#ifdef DEBUG
+  printf("Hello height is %d width is %d grid is %f\n",height,width,gridsize);
+#endif
 
   npix = height*width;
   total = (height+width+2);
@@ -35,6 +36,22 @@ int *pheight,*pwidth;
     for (j=1;j<=height;j++){ //for each receiver
       v.y = (j-0.5)*gridsize;
       retval = segLengths(u,v,height,width,gridsize,segs); 
+      if (retval<0){
+	if (retval==(-1)) {
+	  printf("points u and v aren't unique calling segLengths\n");
+	  exit(1);
+	} //return -1
+	else  {
+	  if (retval==(-2)) {
+	    printf("coordinates of points are outside of grid\n");
+	    exit(2);
+	  }// return -2
+	  else{
+	    printf("bad return from segLengths\n");
+	    exit(3);
+	  }//else
+	}//else
+      }//error in segLengths
 #ifdef DEBUG
       printf("retval is %d\n",retval);
 #endif
@@ -42,12 +59,164 @@ int *pheight,*pwidth;
       for (k=0;k<retval;k++){
 	cidx=(segs[k].pcol-1)*width + segs[k].prow -1;
 	S[(ridx*npix)+cidx]=segs[k].length;
-      }//
+      }//k
 
     }//j
   }//i
   free(segs);
-}
+}//CgenS
+
+void CgenS_sparse(nonzero,colind,rowind,pheight,pwidth,pgridsize)
+     double *pgridsize,*nonzero;
+     int *pheight,*pwidth,*colind,*rowind;
+{
+  int i,j,k,ridx,cidx,retval;
+  int total,npix;
+  int height,width;
+  double gridsize;
+  int segLengths();
+  int segptr,segidx;
+  int *colctr,*segdata,*rcidx,*temp;
+  int icmpfunc(),sz;
+  int ii,jj,flg;
+  struct point u,v;
+  struct segment *segstor;
+
+
+  height = *pheight;
+  width = *pwidth;
+  gridsize = *pgridsize;
+
+#ifdef DEBUG
+  printf("Hello height is %d width is %d grid is %f\n",height,width,gridsize);
+#endif
+
+  npix = height*width;
+  total = (height+width+2);
+  segstor = calloc(total*height*height,sizeof(segstor[0]));//holds segLengths rets
+  segdata = calloc(height*height*3,sizeof(segdata[0]));//holds segLengths inps
+  colctr = calloc(npix,sizeof(colctr[0]));
+  rcidx = calloc(total*height*height*2,sizeof(rcidx[0]));//holds row,col idx
+  temp = calloc(total*height*height*2,sizeof(temp[0]));//holds row,col idx
+
+  for (i=0;i<(npix+1);i++) colctr[i]=0;
+  for (i=0;i<(total*height*height*2);i++) rcidx[i]=0;
+  segidx=segptr=0;
+
+  u.x = -1e-6;
+  v.x = (width*gridsize)+1e-6;
+  u.z = v.z = 0;
+
+  /*  for (i=0;i<(height*height);i++)
+      for (j=0;j<(npix);j++)      S[i*npix+j]=0.0;
+  */
+
+  for (i=1;i<=height;i++){ //for each transmitter
+    u.y = (i-0.5)*gridsize;
+    for (j=1;j<=height;j++){ //for each receiver
+      v.y = (j-0.5)*gridsize;
+      retval = segLengths(u,v,height,width,gridsize,&segstor[segidx]); 
+      if (retval<0){
+	if (retval==(-1)) {
+	  printf("points u and v aren't unique calling segLengths\n");
+	  exit(1);
+	} //return -1
+	else  {
+	  if (retval==(-2)) {
+	    printf("coordinates of points are outside of grid\n");
+	    exit(2);
+	  }// return -2
+	  else{
+	    printf("bad return from segLengths\n");
+	    exit(3);
+	  }//else
+	}//else
+      }//error in segLengths
+      segidx += retval;
+#ifdef DEBUG
+      printf("retval is %d\n",retval);
+#endif
+      segdata[segptr]=i;
+      segdata[segptr+1]=j;
+      segdata[segptr+2]=segdata[segptr-1]+retval;
+      segptr += 3;
+
+      /*      ridx=(j-1)*height + i - 1;
+      for (k=0;k<retval;k++){
+	cidx=(segs[k].pcol-1)*width + segs[k].prow -1;
+	//	S[(ridx*npix)+cidx]=segs[k].length;
+	colctr[cidx+1]++;
+      }//k
+      */
+    }//j
+  }//i
+  printf("Results for several calls to segLengths\n");
+  for (i=0;i<segidx;i++) printf("%d   %d %d  %f\n",
+				i,segstor[i].prow,segstor[i].pcol,
+				segstor[i].length);
+  printf("Division of segLengths data\n");
+  for (i=0;i<(height*height)*3;i+=3)
+    printf("%d    %d %d %d\n",i,segdata[i],segdata[i+1],segdata[i+2]);
+
+  //Process all the segment data into 3 return vectors
+
+  //get row index for each segment in segstor
+  j=k=0;
+  for (i=0; i<(height*height); i++){
+    while (j<segdata[i*3+2]){
+
+      rcidx[k]=(segdata[i*3+1]-1)*height + segdata[i*3]-1;
+      k+=2;
+      j++;
+    }//while
+  }//i
+
+  // get col index for each segment in segstor
+  for (i=0;i<segidx;i++) 
+    rcidx[1+(i<<1)] = (segstor[i].pcol-1) * width + segstor[i].prow - 1;
+
+  printf("Results for several calls to segLengths with indices\n");
+  for (i=0;i<segidx;i++) printf("%d   %d %d  %f   %d %d\n",
+				i,segstor[i].prow,segstor[i].pcol,
+				segstor[i].length,
+				rcidx[i<<1],rcidx[1+(i<<1)]);
+
+  for (i=0;i<segidx;i++)     colctr[rcidx[1+(i<<1)]]++;
+  colind[0]=0;
+  for (i=1;i<=npix;i++) colind[i]=colind[i-1]+colctr[i-1];
+  printf("This is colind\n");
+  for (i=0;i<=npix;i++) printf("%d  %d\n",i,colind[i]);
+
+  sz=sizeof(temp[0]);
+  for (i=0;i<npix;i++){
+    k=0;
+    for (j=0;j<segidx;j++)
+      if (rcidx[1+(j<<1)]==i){
+	temp[k]=rcidx[j<<1];
+	k++;
+      }//if and j 
+    qsort(&temp[0],k,sz,icmpfunc);
+
+    for (ii=0;ii<k;ii++){
+      rowind[colind[i]+ii] = temp[ii];
+      flg=0;
+      for (jj=0;(jj<segidx)&&(flg==0); jj++)
+	if ((rcidx[jj<<1]==temp[ii])&&(rcidx[1+(jj<<1)]==i)){
+	  nonzero[colind[i]+ii] = segstor[jj].length;
+	  flg=1;
+	}//if
+    }//ii
+  }//i
+  printf("This is rowind\n");
+  for (i=0;i<segidx;i++)printf("%d %d %f\n",i,rowind[i],nonzero[i]);
+
+  free(rcidx);
+  free(segdata);
+  free(segstor);
+  free(colctr);
+}//CgenS
+
+
 
 int segLengths(u,v,height,width,gridsize,segs)
      struct point u,v;
@@ -86,7 +255,7 @@ int segLengths(u,v,height,width,gridsize,segs)
   ydiff = v.y-u.y;
 
   //make sure points are distinct
-  if ((u.x==v.x)&&(u.y==v.y)) {return(1);}
+  if ((u.x==v.x)&&(u.y==v.y)) {return(-1);}
 
   //make sure line connecting points crosses grid interior
   i1[0] = (-u.x)/xdiff;
@@ -101,7 +270,7 @@ int segLengths(u,v,height,width,gridsize,segs)
   printf("i1 is %f %f   i2 is %f %f\n",i1[0],i1[1],i2[0],i2[1]);
 #endif
 
-  if ((i1[0]>=i2[1]) || (i2[0]>=i1[1])) {return(2);}
+  if ((i1[0]>=i2[1]) || (i2[0]>=i1[1])) {return(-2);}
 
   for (i=0;i<total;i++) validCross[i]=0;
 
@@ -392,6 +561,16 @@ int m,n;
 int cmpfunc( const void  *a, const void *b){
   const double *fa= (const double *)a;
   const double *fb= (const double *)b;
+
+  if ( (*fa) > *fb) return(1);
+  if ( (*fb) > *fa) return(-1);
+  if ( (*fb)==(*fa)) return(0);
+}
+
+int icmpfunc( const void  *a, const void *b){
+  const int *fa= (const int *)a;
+  const int *fb= (const int *)b;
+
   if ( (*fa) > *fb) return(1);
   if ( (*fb) > *fa) return(-1);
   if ( (*fb)==(*fa)) return(0);

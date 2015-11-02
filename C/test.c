@@ -9,23 +9,41 @@ main(){
     printf("\n");
   }
   */
-  double S[64][96];
-  int i,j,ht,wid;
+
+  //nrow=ht^2
+  //ncol=ht*wd;
+
+  double S[4][8];
+  int i,j,ht,wid,temp[2];
   double grid;
+  double nonzero[32];
+  int  rowind[32],colind[9];
+  int icmpfunc();
 
-  ht=8;
-  wid=12;
-  grid=.5;
+  ht=2;
+  wid=4;
+  grid=1.;
 
+  /* test qsort - make sure compare function compares correct type!!!
+  temp[0]=3;
+  temp[1]=0;
+  for (i=0;i<2;i++) printf("%d %d\n",i,temp[i]);
+  qsort(&temp[0],2,sizeof(temp[0]),icmpfunc);
+  for (i=0;i<2;i++) printf("%d %d\n",i,temp[i]);
+  exit(1);
+  */
+  /*
   CgenS(S,&ht,&wid,&grid);
-  for (i=0;i<64;i++){
+  for (i=0;i<(ht*ht);i++){
     printf("Row %d\n",i);
-    for (j=0;j<96;j++) 
+    for (j=0;j<(ht*wid);j++) 
       if (S[i][j]!=0)
 	printf("%d %f\n",j,S[i][j]);
     printf("\n");
   }
+  */
 
+  CgenS_sparse(&nonzero,&colind,&rowind,&ht,&wid,&grid);
 }
 
 fillit(arr,nrow,ncol)
