@@ -1,4 +1,5 @@
 edges <- list(m1=matrix(1,4,4), m2=matrix(c(1,1,-1,-1), 4, 4), m3=t(matrix(c(1,1,-1,-1),4,4)))
+
 # M <- sapply(edges, as.vector)
 # ihat <- matrix(0,365,61)
 # for(i in seq(1, 361, by=4)){
@@ -56,7 +57,7 @@ stripeProjection <- function(height, width){
 # complement of the stripe space.
 formPerpTiling <- function(edges, height, width){
   M <- formTiling(edges, height, width)
-  M - stripeProjection(height, width)
+  M - stripeProjection(height, width) %*% M
 }
 
 tryall <- function(tau, simg, S, ITP, SP, tWt, sWt){
