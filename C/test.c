@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <stdlib.h>
 
 main(){
   /*  int arr[4][6];
@@ -13,16 +14,17 @@ main(){
   //nrow=ht^2
   //ncol=ht*wd;
 
-  double S[4][8];
+  double S[256][640];  //row is ht^2, col is ht*wid, see assignments below
   int i,j,ht,wid,temp[2];
   double grid;
-  double nonzero[32];
-  int  rowind[32],colind[9];
-  int icmpfunc();
+  double nonzero[163840];  //max number of nonzero entries in sparse matrix
+  int  colind[641]; //colind is 1+number of columns in matrix
+  int rowind[163840];   //max number of nonzero entries in sparse matrix
+  int rowct[256],nz;
 
-  ht=2;
-  wid=4;
-  grid=1.;
+  ht=16;
+  wid=40;
+  grid=1.84;
 
   /* test qsort - make sure compare function compares correct type!!!
   temp[0]=3;
@@ -43,7 +45,21 @@ main(){
   }
   */
 
-  CgenS_sparse(&nonzero,&colind,&rowind,&ht,&wid,&grid);
+   CgenS_sparse(&nonzero,&colind,&rowind,&ht,&wid,&grid);
+   i=0;
+   while ((nonzero[i]>0) && (i<163840)) {
+     rowct[rowind[i]]++;
+     if (rowind[i]==55) 
+       printf("%f\n",nonzero[i]);
+     i++;
+   }//while
+   if (i>163840) {
+     printf("Uh Oh - too many nonzero guys!!!\n");
+     exit(1);
+   }
+   nz=i;
+   printf("Number of nonzero guys is %d\n",nz);
+   for (i=0;i<256;i++) printf("%3d %d\n",i,rowct[i]);
 }
 
 fillit(arr,nrow,ncol)

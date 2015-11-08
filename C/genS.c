@@ -150,6 +150,7 @@ void CgenS_sparse(nonzero,colind,rowind,pheight,pwidth,pgridsize)
       */
     }//j
   }//i
+#ifdef DEBUG
   printf("Results for several calls to segLengths\n");
   for (i=0;i<segidx;i++) printf("%d   %d %d  %f\n",
 				i,segstor[i].prow,segstor[i].pcol,
@@ -157,7 +158,7 @@ void CgenS_sparse(nonzero,colind,rowind,pheight,pwidth,pgridsize)
   printf("Division of segLengths data\n");
   for (i=0;i<(height*height)*3;i+=3)
     printf("%d    %d %d %d\n",i,segdata[i],segdata[i+1],segdata[i+2]);
-
+#endif
   //Process all the segment data into 3 return vectors
 
   //get row index for each segment in segstor
@@ -175,17 +176,22 @@ void CgenS_sparse(nonzero,colind,rowind,pheight,pwidth,pgridsize)
   for (i=0;i<segidx;i++) 
     rcidx[1+(i<<1)] = (segstor[i].pcol-1) * width + segstor[i].prow - 1;
 
+#ifdef DEBUG
   printf("Results for several calls to segLengths with indices\n");
   for (i=0;i<segidx;i++) printf("%d   %d %d  %f   %d %d\n",
 				i,segstor[i].prow,segstor[i].pcol,
 				segstor[i].length,
 				rcidx[i<<1],rcidx[1+(i<<1)]);
+#endif
 
   for (i=0;i<segidx;i++)     colctr[rcidx[1+(i<<1)]]++;
   colind[0]=0;
   for (i=1;i<=npix;i++) colind[i]=colind[i-1]+colctr[i-1];
+
+#ifdef DEBUG
   printf("This is colind\n");
   for (i=0;i<=npix;i++) printf("%d  %d\n",i,colind[i]);
+#endif
 
   sz=sizeof(temp[0]);
   for (i=0;i<npix;i++){
@@ -207,8 +213,11 @@ void CgenS_sparse(nonzero,colind,rowind,pheight,pwidth,pgridsize)
 	}//if
     }//ii
   }//i
+
+#ifdef DEBUG
   printf("This is rowind\n");
   for (i=0;i<segidx;i++)printf("%d %d %f\n",i,rowind[i],nonzero[i]);
+#endif
 
   free(rcidx);
   free(segdata);
@@ -324,25 +333,39 @@ int segLengths(u,v,height,width,gridsize,segs)
   computeCrossings(uprime,vprime,xylambda,xylen,crossings);
   //check for valid crossings
   for (i=0;i<xylen;i++)
-    if ((crossings[i].x>=0)&&(crossings[i].x<=(width*gridsize))&&
-	(crossings[i].y>=0)&&(crossings[i].y<=(height*gridsize)))
+    if ((crossings[i].x>=0)&&(crossings[i].x<=(width*gridsize+1e-10))&&
+	(crossings[i].y>=0)&&(crossings[i].y<=(height*gridsize+1e-10)))
       validCross[i]=1;
     else
       validCross[i]=0;
+  
 #ifdef DEBUG
-  for (i=0;i<xylen;i++) printf("crossing %.10f %.10f %.10f   * %d\n",
-			       crossings[i].x,crossings[i].y,
+  for (i=0;i<xylen;i++) printf("%d    %15f %15f   %15e  %d\n",i,
+			       crossings[i].x,(width*gridsize),
+			       crossings[i].x-(width*gridsize),		       
+			       crossings[i].x==(width*gridsize));
+  for (i=0;i<xylen;i++) printf("%d crossing %.10f %.10f %.10f   * %d\n",
+			       i,crossings[i].x,crossings[i].y,
 			       crossings[i].z,validCross[i]);
 #endif
 
   //remove invalid crossings
   retval=removeInvalid(crossings,validCross,height,width,xylen);
   xylen=retval;
+#ifdef DEBUG
+  printf("After first call to removeInvalid, xylen is %d\n",xylen);
+#endif
 
   for (i=1;i<xylen;i++) 
     lengths[i-1]=sqrt( SQR(crossings[i].x-crossings[i-1].x)+
 		       SQR(crossings[i].y-crossings[i-1].y)+
 		       SQR(crossings[i].z-crossings[i-1].z));
+
+#ifdef DEBUG
+  printf("first calculation of lengths\n");
+  for (i=1;i<xylen;i++) printf("%d %f    * %d\n",
+    i,lengths[i-1],validCross[i-1]);
+#endif
 
   for (i=0;i<(xylen-1);i++)
     //    if (lengths[i]==0) validCross[i]=0;
