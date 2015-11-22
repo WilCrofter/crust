@@ -1,6 +1,6 @@
 # source('~/dev/r/crust/C/ctest.R')
 # source('~/dev/r/crust/R/smooth.R')
-# S <- genStest(32, 200, 4*.23)
+# S <- genStest(32, 200, 4*.46)
 # Sp <- S[rangeRows(0, 32, 32), ]
 
 blobs <- function(Splus, x, y, size=8, gridsize=.92){
