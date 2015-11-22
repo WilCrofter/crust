@@ -22,6 +22,22 @@ ij2row <- function(i, j, ntransducers){
   (j-1)*ntransducers + i
 }
 
+# Return row indices of all paths of a give slope
+slopeRows <- function(slope, ntransducers){
+  temp <- sapply(1:ntransducers, function(i)ij2row(i, i-slope, ntransducers))
+  idx <- temp > 0 & temp <= ntransducers^2
+  temp[idx]
+}
+
+# Return row indices of all paths with slopes in a given range
+rangeRows <- function(slope1, slope2, ntransducers){
+  ans <- integer()
+  for(k in slope1:slope2){
+    ans <- c(ans, slopeRows(k, ntransducers))
+  }
+  sort(ans, decreasing=FALSE)
+}
+
 formH <- function(height, width){
   d <- height*width
   H <- Matrix(0, d, d)

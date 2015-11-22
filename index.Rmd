@@ -4,6 +4,7 @@ output: html_document
 ---
 
 #### Notes in reverse chronological order.
+* [Basis for the system matrix row space](www/Splus_as_basis.html)
 * [Test suite](www/test_suite_thigh.html)
 * [Stripe space and dimension reduction](www/stripes_and_dim_reduction.html)
 * [Some notes on projection and regularization](www/projection_regularization.html)
