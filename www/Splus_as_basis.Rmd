@@ -7,7 +7,7 @@ output: html_document
 
 ### Preliminaries
 
-It appears that the rows of a system matrix which correspond to paths from transmitter $i$ to receiver $j$ where $i \ge j$ form a basis for the row space of the matrix. That is, these rows are linearly independent and the remaining rows (for which $i \lt j$) are linear combinations of them. (Similarly if the inequalities are reversed.) I say "appears" because, although we formed this conjecture during a discussion about ten days ago and haven't observed any counter-examples since, we haven't attempted a formal proof.
+It appears that the rows of a system matrix which correspond to paths from transmitter $i$ to receiver $j$ where $i \ge j$ form a basis for the row space of the matrix. That is, these rows are linearly independent and the remaining rows (for which $i \lt j$) are linear combinations of them. (Similarly if the inequalities are reversed.) I say "appears" because, although Gina and I formed this conjecture during a discussion about ten days ago and haven't observed any counter-examples since, we haven't attempted a formal proof.
 
 If true, it follows algebraically that the vector of time-of-flight measurements is equivalent, via an invertible linear transform, to orthogonal projection of the desired image on the space of all linear combinations of the basis rows. The basis rows, in turn, can be thought of as images since they have one entry per pixel. As images, they correspond to direct paths from a transmitter to a receiver, (the value of each intersected pixel being the length of the intersection of the path with the pixel.) Linear combinations of rows thus correspond to images formed by linear combinations of such paths. I find this helpful to intuition and possibly to engineering design.
 
@@ -45,7 +45,7 @@ The following will establish that the time-of-flight measurements are equivalent
 
 Intuitively, if $Ax=y,$ then the components of $y$ are inner products of the rows of $A$ with $x,$ hence only provide information about $x$ with respect to the span (set of all linear combinations) of the rows of $A.$ Let $\langle A^T \rangle$ denote that span (where the transpose just converts from rows to columns.) The *orthogonal complement* of $\langle A^T \rangle$, is the space of all vectors whose inner products with the rows of $A$ are zero, i.e., the null space of $A.$ Since a nonzero vector will either be in the null space of $A$ or have nonzero inner product with one or more rows of $A$, $\langle A^T \rangle$ and the null space of $A$ intersect in the zero vector only.
 
-Let $S$ be a system matrix, and let $S_+$ be submatrix of rows with correspond to paths from transmitter $i$ to receiver $j$ where $i \ge j$. Let $\tau_+$ be the times of flight associated with these paths. Let $S_-$ and $\tau_-$ be the remaining rows and times of flight respectively, i.e., those for which $i \lt j$. Assume that the conjecture of the first paragraph is true. Then the rows of $S_+$ are linearly independent and the rows of $S_-$ are linearly dependent upon them, i.e., $S_- = MS_+$ for some matrix, $M$.
+Let $S$ be a system matrix, and let $S_+$ be submatrix of rows which correspond to paths from transmitter $i$ to receiver $j$ where $i \ge j$. Let $\tau_+$ be the times of flight associated with these paths. Let $S_-$ and $\tau_-$ be the remaining rows and times of flight respectively, i.e., those for which $i \lt j$. Assume that the conjecture of the first paragraph is true. Then the rows of $S_+$ are linearly independent and the rows of $S_-$ are linearly dependent upon them, i.e., $S_- = MS_+$ for some matrix, $M$.
 
 Abstractly, the above implies that $\tau_- = M\tau_+$ as well. (Of course this will hold only approximately in the real world. As statistically independent measurements the components of $\tau_-$ should contribute about 3 dB to SNR.)
 
@@ -53,14 +53,9 @@ The square matrix, $S_+ S_+^T$, is invertible, for suppose $S_+ S_+^T x = 0.$ Th
 
 By definition, the *orthogonal projection* of a vector, $b$, on the row space, $\langle S_+^T\rangle$ of $S_+$ is the closest point in $\langle S_+^T\rangle$ to $b$ in the sense of least squares. Since any vector in $\langle S_+^T\rangle$ may be uniquely represented as $S_+^Tx$, (i.e., as a linear combination of the columns of $S_+^T$,) the projection may be found by minimizing$$||S_+^Tx - b||^2 = (S_+^Tx - b)^T(S_+^Tx - b).$$The $x$ which minimizes this quadratic form is well known to be$$x = (S_+ S_+^T)^{-1}S_+b$$provided the inverse exists, which it does as was shown in the previous paragraph. The orthogonal projection is not $x$ itself, but $S_+^Tx,$ hence the orthogonal projection of an arbitrary vector, $b,$ on $\langle S_+^T \rangle$ is $S_+^T (S_+ S_+^T )^{-1}S_+b$. The matrix,$$P_+ = S_+^T (S_+ S_+^T )^{-1}S_+,$$ is the *projection matrix* onto $\langle S_+^T\rangle.$
 
-The projection matrix has two useful properties. 
+The projection matrix has the useful property that $S_+P_+ = S_+,$ shown as follows:$$S_+P_+ = S_+ [S_+^T (S_+ S_+^T )^{-1}S_+] \\ = (S_+ S_+^T)(S_+ S_+^T )^{-1}S_+ \\ = S_+.$$
 
-1. $P_+^2 = P_+$:
-    + $$P_+^2 = [S_+^T (S_+ S_+^T )^{-1}S_+] [S_+^T (S_+ S_+^T )^{-1}S_+] \\ = S_+^T (S_+ S_+^T )^{-1}(S_+S_+^T )(S_+ S_+^T )^{-1}S_+ \\ = S_+^T (S_+ S_+^T )^{-1}S_+ \\ = P_+,$$
-2. and $S_+P_+ = S_+$:
-    + $$S_+P_+ = S_+ [S_+^T (S_+ S_+^T )^{-1}S_+] \\ = (S_+ S_+^T)(S_+ S_+^T )^{-1}S_+ \\ = S_+.$$
-
-Let $b$ be an image for which $S_+b=\tau_+.$ I'll first show that $\tau_+$ is uniquely determined by the projection of $b$ on $\langle S_+^T \rangle.$ This follows immediately from the second of the two useful properites:$$\tau_+ = S_+b = (S_+P_+)b = S_+(P_+b).$$Hence, $S_+$ maps $P_+b$ uniquely to $\tau_+$.
+Let $b$ be an image for which $S_+b=\tau_+.$ I'll first show that $\tau_+$ is uniquely determined by the projection of $b$ on $\langle S_+^T \rangle.$ This follows immediately from $S_+P_+ = S_+$:$$\tau_+ = S_+b = (S_+P_+)b = S_+(P_+b).$$Hence, $S_+$ maps $P_+b$ uniquely to $\tau_+$.
 
 It is also true that $\tau_+$ uniquely determines $P_+b$:$$S_+^T(S_+S_+^T)^{-1}\tau_+ = S_+^T(S_+S_+^T)^{-1}(S_+b)\\ =  [S_+^T(S_+S_+^T)^{-1}S_+]b \\ = P_+b.$$
 
