@@ -1,0 +1,84 @@
+---
+title: "Basis for the system matrix row space"
+author: "W. Bauer"
+date: "November 21, 2015"
+output: html_document
+---
+
+### Preliminaries
+
+It appears that the rows of a system matrix which correspond to paths from transmitter $i$ to receiver $j$ where $i \ge j$ form a basis for the row space of the matrix. That is, these rows are linearly independent and the remaining rows (for which $i \lt j$) are linear combinations of them. (Similarly if the inequalities are reversed.) I say "appears" because, although Gina and I formed this conjecture during a discussion about ten days ago and haven't observed any counter-examples since, we haven't attempted a formal proof.
+
+If true, it follows algebraically that the vector of time-of-flight measurements is equivalent, via an invertible linear transform, to orthogonal projection of the desired image on the space of all linear combinations of the basis rows. The basis rows, in turn, can be thought of as images since they have one entry per pixel. As images, they correspond to direct paths from a transmitter to a receiver, (the value of each intersected pixel being the length of the intersection of the path with the pixel.) Linear combinations of rows thus correspond to images formed by linear combinations of such paths. I find this helpful to intuition and possibly to engineering design.
+
+```{r echo=FALSE, fig.align='center', fig.show='hold', fig.width=3.5}
+source('../R/smooth.R')
+# REMARK: the binary, genS.so, is not available in the github repository since
+# is must be recompiled for different architectures and operating systems.
+dyn.load("../C/genS.so")
+genStest <- function(height,width,gridsize){
+  SfromC <- .C("CgenS",S=double(height^3*width),as.integer(height),as.integer(width),as.double(gridsize))
+  matrix((SfromC["S"])[[1]],height^2,height*width,byrow=TRUE)
+}
+S <- genStest(32, 100, 4*.46)
+# Rows for which transmitter index, i, is at least as large as
+# receiver index, j: i >= j.
+Sp <- S[rangeRows(0, 32, 32), ]
+# Projection on the rows of Sp
+P <- t(Sp) %*% solve(Sp %*% t(Sp), Sp)
+# Construction of "blob"
+size = 16
+x = 65
+y = 8
+img <- matrix(0, 100, 32)
+img[x:(x+size-1), y:(y+size-1)] <- 1
+par(mfrow=c(2,1))
+image(x=(1:100)*4*.46, y=(1:32)*4*.46, z=img, asp = 1, xlab="x (mm)", ylab="y (mm)", main="Image")
+z=matrix(P%*%as.vector(img),100,32)
+image(x=(1:100)*4*.46, y=(1:32)*4*.46, z=z, asp = 1, xlab="x (mm)", ylab="y (mm)", main="Projection on the row space of S")
+par(mfrow=c(1,1))
+```
+
+### Equivalence of time-of-flight to projection on the row space
+
+The following will establish that the time-of-flight measurements are equivalent, via an invertible linear transform, to orthogonal projection of the desired image on the space of all linear combinations of the independent rows of the system matrix.
+
+Intuitively, if $Ax=y,$ then the components of $y$ are inner products of the rows of $A$ with $x,$ hence only provide information about $x$ with respect to the span (set of all linear combinations) of the rows of $A.$ Let $\langle A^T \rangle$ denote that span (where the transpose just converts from rows to columns.) The *orthogonal complement* of $\langle A^T \rangle$, is the space of all vectors whose inner products with the rows of $A$ are zero, i.e., the null space of $A.$ Since a nonzero vector will either be in the null space of $A$ or have nonzero inner product with one or more rows of $A$, $\langle A^T \rangle$ and the null space of $A$ intersect in the zero vector only.
+
+Let $S$ be a system matrix, and let $S_+$ be submatrix of rows which correspond to paths from transmitter $i$ to receiver $j$ where $i \ge j$. Let $\tau_+$ be the times of flight associated with these paths. Let $S_-$ and $\tau_-$ be the remaining rows and times of flight respectively, i.e., those for which $i \lt j$. Assume that the conjecture of the first paragraph is true. Then the rows of $S_+$ are linearly independent and the rows of $S_-$ are linearly dependent upon them, i.e., $S_- = MS_+$ for some matrix, $M$.
+
+Abstractly, the above implies that $\tau_- = M\tau_+$ as well. (Of course this will hold only approximately in the real world. As statistically independent measurements the components of $\tau_-$ should contribute about 3 dB to SNR.)
+
+The square matrix, $S_+ S_+^T$, is invertible, for suppose $S_+ S_+^T x = 0.$ Then $x^T S_+ S_+^T x = 0.$ Thus, the sum of the squares of $x^TS_+$ is zero, hence $x^TS_+ = 0,$ and $x^T$ represents a linear combination of the rows of $S_+$ which equates to zero. Since (by assumption) the rows of $S_+$ are independent, $x^T$ must be zero. Thus $S_+ S_+^Tx=0$ if and only if $x=0,$ hence $S_+ S_+^T$ is invertible. (Caveat: Since $S_+$ has more columns than rows in general, the opposite product, $S_+^T S_+,$ will not be invertible.)
+
+By definition, the *orthogonal projection* of a vector, $b$, on the row space, $\langle S_+^T\rangle$ of $S_+$ is the closest point in $\langle S_+^T\rangle$ to $b$ in the sense of least squares. Since any vector in $\langle S_+^T\rangle$ may be uniquely represented as $S_+^Tx$, (i.e., as a linear combination of the columns of $S_+^T$,) the projection may be found by minimizing$$||S_+^Tx - b||^2 = (S_+^Tx - b)^T(S_+^Tx - b).$$The $x$ which minimizes this quadratic form is well known to be$$x = (S_+ S_+^T)^{-1}S_+b$$provided the inverse exists, which it does as was shown in the previous paragraph. The orthogonal projection is not $x$ itself, but $S_+^Tx,$ hence the orthogonal projection of an arbitrary vector, $b,$ on $\langle S_+^T \rangle$ is $S_+^T (S_+ S_+^T )^{-1}S_+b$. The matrix,$$P_+ = S_+^T (S_+ S_+^T )^{-1}S_+,$$ is the *projection matrix* onto $\langle S_+^T\rangle.$
+
+The projection matrix has the useful property that $S_+P_+ = S_+,$ shown as follows:$$S_+P_+ = S_+ [S_+^T (S_+ S_+^T )^{-1}S_+] \\ = (S_+ S_+^T)(S_+ S_+^T )^{-1}S_+ \\ = S_+.$$
+
+Let $b$ be an image for which $S_+b=\tau_+.$ I'll first show that $\tau_+$ is uniquely determined by the projection of $b$ on $\langle S_+^T \rangle.$ This follows immediately from $S_+P_+ = S_+$:$$\tau_+ = S_+b = (S_+P_+)b = S_+(P_+b).$$Hence, $S_+$ maps $P_+b$ uniquely to $\tau_+$.
+
+It is also true that $\tau_+$ uniquely determines $P_+b$:$$S_+^T(S_+S_+^T)^{-1}\tau_+ = S_+^T(S_+S_+^T)^{-1}(S_+b)\\ =  [S_+^T(S_+S_+^T)^{-1}S_+]b \\ = P_+b.$$
+
+Thus projections, $P_+b,$ and associated times-of-flight, $\tau_+,$ are in 1-1 correspondence, i.e., equivalent by a change of variable. The correspondence is linear in both directions and (left) invertible. 
+
+### Interpretation and opinion
+
+It immediately follows from $S_+P_+ = S_+,$ that $S_+(I-P_+) = 0$, hence that $I-P_+$ maps images to the null space of $S_+$. Since any image, $b,$ can be represented as a sum, $b=P_+b + (I-P_+)b,$ we can see that any image decomposes uniquely into a term from $\langle S_+^T \rangle$ and a term from the null space of $S_+.$ The times-of-flight, $\tau_+,$ contain no information about the null space term, $(I-P_+)b$. That information can be considerable. In the DVT case, the rank of $S_+,$ i.e., the dimension of $\langle S_+^T \rangle,$ would be perhaps 15% of full rank for a normal (20 cm) thigh. If the null space information is to be recovered, other methods such as alignment with an atlas, statistical characterization of anatomy, or multiple scans would seem necessary.
+
+It is worth noting that since $P_+b$ is the closest point to $b$ in $\langle S_+^T \rangle$, sub-regions of $P_+b$ should be fairly close to corresponding sub-regions of $b.$ (If not the total squared distance would not be minimized.) It is thus possible that alignment with an anatomical atlas could be done piecewise on sub-regions, rather than all at once.  
+
+Most of foregoing considered only $S_+$ and $\tau_+$ since, abstractly, results for $S_-$ and $\tau_-$ can be derived from them via linear dependence. Abstractly, they provide no additional information. As mentioned above, in reality they would be statistically independent measurements and should improve signal-to-noise ratio if properly used. This note restricts attention to the ideal case, however.
+
+Regarding design intuition, it may be useful to consider projections on subspaces of $\langle S_+^T \rangle.$ In particular, projections on subspaces corresponding to paths for which $j\le i \le j+n$ might indicate how a projected image is built up from superimposed paths. For $n=0,$ for instance, these would correspond to paths from transmitter $i$ to receiver $i.$ For $n=1$ they would correspond to paths from tranmitters $i$ to receivers $i$ and $i+1$. Results for n = 0, 1, 2, 3, and 4 are shown below.
+
+```{r fig.align='center', fig.show='hold', fig.width=3.5, echo=FALSE}
+par(mfrow=c(2,1))
+image(x=(1:100)*4*.46, y=(1:32)*4*.46, z = img, asp=1, xlab="x (mm)", ylab="y (mm)", main = "Image")
+for(n in c(0,1,2,3,4)){
+  Sptemp <- S[rangeRows(0, n, 32), ]
+  proj <- t(Sptemp) %*% solve(Sptemp %*% t(Sptemp), Sptemp) %*% as.vector(img)
+  image(x=(1:100)*4*.46, y=(1:32)*4*.46, z = matrix(proj,100,32), asp=1, xlab="x (mm)", ylab="y (mm)", main = paste0("j between i and i + ",n))
+}
+par(mfrow=c(1,1))
+```
+

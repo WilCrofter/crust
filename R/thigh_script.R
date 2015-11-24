@@ -40,6 +40,13 @@ readScan <- function(scan, resolution, datadir="data"){
   temp
 }
 
+readWideScan <- function(scan, resolution, datadir="data"){
+  temp <- as.matrix(read.csv(paste0(datadir,"/wide_scan_",scan,"_",resolution,".csv"), 
+                             as.is=TRUE, comment.char = "#"))
+  colnames(temp) <- gsub("X","",colnames(temp))
+  temp
+}
+
 tissue2Slowness <- function(img, datadir="data"){
   ap <- read.csv(paste0(datadir,"/acoustic_properties_thigh.csv"), 
                         as.is=TRUE, comment.char = "#")
