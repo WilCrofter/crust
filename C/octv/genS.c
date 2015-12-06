@@ -253,7 +253,8 @@ int segLengths(u,v,height,width,gridsize,segs)
   kx = calloc(width+1,sizeof(kx[0]));
   ky = calloc(height+1,sizeof(ky[0]));
  #ifdef DEBUG
-  printf("calloc kx and ky\n");
+  printf("total is %d width is %d height is %d calloc kx and ky\n",
+    total,width,height);
 #endif 
   
   xlambda = calloc(width+1,sizeof(xlambda[0]));

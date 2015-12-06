@@ -1,8 +1,7 @@
 #include "mex.h"
-#include "genS.c"
-
-void
-mexFunction (int nlhs, mxArray* plhs[],
+//#include "genS.c"
+void CgenS(double* S, int* pheight, int* pwidth, double* gridsize);
+void mexFunction (int nlhs, mxArray* plhs[],
              int nrhs, const mxArray* prhs[])
 {
   
@@ -26,7 +25,11 @@ mexFunction (int nlhs, mxArray* plhs[],
              height,width,gridsize);
   mexPrintf ("height adddress is %x holding %d width is %x grid is %x %f\n",
               pheight,*pheight,*pwidth,pgridsize,gridsize);
-  S = mxCreateDoubleMatrix (height^2,height*width,mxREAL);
+  plhs[0] = mxCreateDoubleMatrix (height^3*width,1,mxREAL);
+  S=mxGetPr(plhs[0]);
+  
+  mexPrintf("S address is %x plhs[0] is %x\n",S,plhs[0]);
+  
   CgenS(S,pheight,pwidth,pgridsize);
-  plhs[0]=S;
+ 
 }
