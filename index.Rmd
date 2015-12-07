@@ -4,6 +4,7 @@ output: html_document
 ---
 
 #### Notes in reverse chronological order.
+* [Pixelated images of whole thigh section](www/thigh_large_pixelation.html)
 * [Expanded test suite using 60 mm probe](www/revised_test_suite_thigh.html)
 * [Basis for the system matrix row space](www/Splus_as_basis.html)
 * [Test suite](www/test_suite_thigh.html)
