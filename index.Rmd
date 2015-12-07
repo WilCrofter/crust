@@ -1,0 +1,36 @@
+---
+title: "Co-Robotic Ultrasound Tomography"
+output: html_document
+---
+
+#### Notes in reverse chronological order.
+* [Pixelated images of whole thigh section](www/thigh_large_pixelation.html)
+* [Expanded test suite using 60 mm probe](www/revised_test_suite_thigh.html)
+* [Basis for the system matrix row space](www/Splus_as_basis.html)
+* [Test suite](www/test_suite_thigh.html)
+* [Stripe space and dimension reduction](www/stripes_and_dim_reduction.html)
+* [Some notes on projection and regularization](www/projection_regularization.html)
+* [(Easy) projection on the orthogonal complement of the stripe space](www/proj_on_perp_of_stripes.html)
+* [Regularization by normally distributed image statistics](www/inversion_test_3.html)
+* [Testing ICM algorithm on recovered image](www/ICM_test.html)
+* [Test of inversion strategy with finer grid](www/inversion_test_2.html)
+* [Testing an inversion strategy](www/test_smooth.html)
+* [Tissue adjacency statistics, thigh section](www/tissue_transitions_thigh.html)
+* [Working prototype, phantom axial section of human thigh](www/thigh_working_prototype.html)
+* [Prototyping virtual phantom of a human thigh](www/inkscaping.html)
+* [S-Orthonormal image bases](www/pix_alternatives.html)
+    + *Bases which are orthonormal with respect to a special inner product may prove valuable for image recovery.*
+* [System matrix utilities](www/writing_sysmat_utils.html)
+* [Some randomly generated "images"](www/random_images.html)
+* [Summary 7/2/2015](www/summary_2015_7_2.html)
+* [Null space of S and other algebraic characteristics](www/S_kernel_etc.html)
+* [System matrices are ill-conditioned](www/ill_conditioned_S.html)
+* [Automating scan simulation](www/using_box_scanner.html)
+* [Scanning a simulated phantom](www/sim_scan_1.html)
+* [Using the box phantom](www/using_box_phantom.html)
+* [Statistical model of active echo imaging](www/mcmc_ae.html)
+* [Radon transform and projection slice theorem](www/radon_slice.html)
+* [Distribution of transmit-receive paths through a pixel](www/distr_lines_thru_pixel.html)
+* [Time and Memory: Moore-Penrose inversion of random matrices](www/time_memory_1.html)
+* [Description of simple MCMC model for image reconstruction](www/MCMC_model_1.html)
+* [Test utilities to find pixel crossings](www/utilTests.html)
