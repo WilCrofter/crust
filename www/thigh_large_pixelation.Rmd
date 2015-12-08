@@ -1,0 +1,35 @@
+---
+title: "Large pixelated thigh section"
+author: "W. Bauer"
+date: "December 6, 2015"
+output: html_document
+---
+
+This note documents creation of a large, pixelated thigh section at several resolutions. The eventual objective is to explore image reconstruction from two or more overlapping scans on the same grid. Though short of a full, tomographic scan, the overlapping section should have improved resolution. (Line artifacts in the images are very likely the fault of graphing packages.)
+
+```{r fig.align='center', message=FALSE, fig.width=4}
+source("../R/inkscape_utils.R")
+phantom <- importIPhantom("../data/thigh_inkscape.csv")
+plotIPhantom(phantom, main="Section")
+scan <- matrix(c(0,200,190,200,190,0,0,0), 4,2, byrow=TRUE)
+overlayRectangle(scan, lwd=4, border="red")
+# Utility to calculate gridsize in mm which will give a certain height, h, in pixels
+# for a given rectangle, r.
+calcGridSize <- function(r, h){
+  hv <- r[4,] - r[1,]
+  lhv <- sqrt(sum(hv^2))
+  mean(c(lhv/(h-.5), lhv/(h-1.5)))
+}
+for(res in 2^(4:7)){
+  gridsize <- calcGridSize(scan, res)
+  # adjust for height of 200 vs probe height of 60
+  gridsize <- gridsize*60/200 
+  img <- pixelate(phantom, scan, gridsize)
+  colnames(img) <- as.character(signif(gridsize*(1:ncol(img)-1),4))
+  image(x=(1:nrow(img))*gridsize, y=(1:ncol(img))*gridsize, img, asp=1, 
+        xlab = "x (mm)", ylab="y (mm)", main=paste("Grid size:", signif(gridsize,4), "mm"))
+  outf <- paste0("../data","/whole_thigh_",res,".csv")
+  write.csv(as.data.frame(img),outf, row.names=FALSE)
+}
+```
+
