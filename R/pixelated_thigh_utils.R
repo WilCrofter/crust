@@ -1,4 +1,29 @@
-# TODO: Use C versions of, e.g., wCrossings or perhaps port these functions to C.
+####################################################################################
+# Functions to position a rectangle over a pixelated image and to calculate
+# transducer coordinates based on the rectangle. The pixels of the image in question
+# must be labeled by tissue type, (as opposed to slowness or speed,) with pixels 
+# external to tissue labeled 0.
+#
+# The main functions implemented below are displayImage, minRect (which computes
+# a rectangle,) and transducerPos (which computes transducer positions from
+# the output of minRect.) A rectangle can be displayed over an image using the
+# standard R function, polygon.
+#
+# These functions depend on R/utilities.R. Whole thigh images are stored as csv
+# files but must be converted to matrices when loaded. For instance,
+#               img <- as.matrix(read.csv("data/whole_thigh_32.csv"))
+####################################################################################
+
+# Display an image, given its grid size in mm. In the case of the whole thigh images
+# for which these functions were written, grid size can be estimated from the
+# file names. For file data/whole_thigh_K.csv, a grid size of 
+# 30/(K-.5) + 30/(K-1.5) would be reasonable. (Don't ask. Anyway, grid size is 
+# not critical. It merely affects the scale of the phantom. A typical thigh might 
+# be 20 cm in diameter.)
+displayImage <- function(img, gridsize, xlab="x (mm)", ylab="y (mm)", asp=1, ...){
+  image(gridsize*(1:nrow(img)-.5), gridsize*(1:ncol(img)-.5), img, 
+        xlab=xlab, ylab=ylab, asp=asp, ...)
+}
 
 # Given a grid size, convert from x,y coordinates, c(x,y), to row-column coordinates
 # assuming the pixel, img[1,1], has corners c(0,0) and c(gridsize, gridsize)
@@ -124,4 +149,27 @@ minRect <- function(img, gridsize, center, angle_in_radians, height){
   }
   # Return the derived rectangle's 4 corners as a 4x2 array.
   rbind(cnr1, cnr2, cnr3, cnr4)
+}
+
+# Given a number, n, of equally spaced transducers and two points, u and v, representing
+# the two endpoints of a probe, return transducer positions as an n by 2 matrix. 
+# Transducers are placed in the centers of the n intervals of equal length which 
+# partition the line segment between u and v.
+#        u--1--|--2--|...|--n--v
+transducerPos <- function(n, u, v){
+  # First transducer is half a space from u.
+  # Subsequent transducers are full spaces from one another.
+  t(sapply(1:n, function(k)u+(k-.5)*(v-u)/n))
+}
+
+# Given a rectangle, r, as calculated by minRect, above, and a number, n, of transducers,
+# return a list of 2 nx2 matrices of probe positions, one for each of two probes,
+# one positioned between corners 1 and 2 of the rectangle, the other between corners
+# 3 and 4. The probes will be numbered in a counter-clockwise direction, the first
+# probe numbering from corner 1 to corner 2, the second from corner 3 to corner 4.
+# probe numbering is easily reversed, e.g., probe <- probe[nrow(probe):1,], if
+# desired.
+probePos <- function(n, r){
+  list(probe1=transducerPos(n, r[1,], r[2, ]),
+       probe2=transducerPos(n, r[3,], r[4, ]))
 }
