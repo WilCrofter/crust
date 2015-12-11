@@ -19,10 +19,10 @@ pixel2xy <- function(ijpix, gridsize){
 gridCrossings <- function(u, v, gridsize, img, eps = (.Machine$double.eps)^.75){
   kx <- seq(0, 1+nrow(img))*gridsize
   ky <- seq(0, 1+ncol(img))*gridsize
-  # wCrossings requires 3 vectors:
+  # wCrossings requires vectors with 3 components:
   lambdas <- sort(unique(c(wCrossings(c(u,0), c(v,0), c(1,0,0), kx), 
                            wCrossings(c(u,0), c(v,0), c(0,1,0), ky))))
-  # Since lambdas are sorted in ascending order, crossings well be
+  # Since lambdas are sorted in ascending order, crossings will be
   # in order from u to v. Eliminate any which are too close together.
   idx <- which(diff(lambdas) < eps)
   if(length(idx)>0)lambdas <- lambdas[-(1+idx)]
@@ -62,17 +62,26 @@ nonzeroPix <- function(u, v, img, gridsize){
   pixelsSatisfying(pix, img, function(x)x!=0)
 }
 
+# Given a center and direction, determine a point of the form
+# center + lambda*direction on the boundary of the image,
+# where lambda >=0
+boundaryPt <- function(center, direction, img, gridsize){
+  ur <- gridsize*c(nrow(img),ncol(img))
+  ll <- c(0,0)
+  lambda <- c( (ur-center)/direction, (ll-center)/direction )
+  center + min(lambda[lambda >= 0])*direction
+}
+
 # Find a minimal rectangle of specified position, orientation, and height which encloses
 # a portion of the non-zero pixels in an image. The gridsize, center coordinates, and 
 # height must be in the same units, usually mm.
 minRect <- function(img, gridsize, center, angle_in_radians, height){
-  # Equation of the line
-  m <- tan(angle_in_radians)
-  b <- center[2]-m*center[1]
-  # Endpoints within the grid
-  u <- c(0, b)
-  xmax <- nrow(img)*gridsize
-  v <- c(xmax, m*xmax+b)
+  # Form unit vector at the given angle.
+  direction <- c(cos(angle_in_radians), sin(angle_in_radians))
+  # Find u and v on the line determined by center and direction, which
+  # include the entire image.
+  u <- boundaryPt(center, -direction, img, gridsize)
+  v <- boundaryPt(center, +direction, img, gridsize)
   # Indices of nonzero pixels crossed by the segment
   nzpix <- nonzeroPix(u, v, img, gridsize)
   # That the line segment should intersect tissue is a programming convenience.
@@ -82,21 +91,37 @@ minRect <- function(img, gridsize, center, angle_in_radians, height){
   aprxbounds <- nzpix[,c(1,ncol(nzpix))]
   # Find their midpoints in x,y coordinates
   midpts <- apply(aprxbounds, 2, function(w)pixel2xy(w,gridsize))
-  # Use their x coordinates to find nearby points on the line determined by u and v.
-  # These will be the approximate centers of the sides of the rectangle which bound
-  # the tissue. Sort to facilitate moving them outward to find exact centers.
-  x <- sort(midpts[1,])
-  y <- m*x + b
-  # Find the endpoints of a line segment of the given height, perpendicular to the 
-  # line determined by u and v, and centered at the origin. Translations of these
-  # points will form the corners of the rectangle.
-  # 1. Form a unit vector, normal to v-u in the counterclockwise sense, i.e., as
-  # if v-u were rotated pi/2 counterclockwise and normalized.
-  unit <- c(-1,1)*(v-u)[2:1]/sqrt(sum((v-u)^2))
-  # 2. Form the endpoints
-  ep1 <- height*unit/2
-  ep2 <- -height*unit/2
-  # Move the centers outward until line segments of the given height, perpendicular
-  # to the line determined by u and v, does not intersect tissue.
-  
+  # Find the closest points to them on the line determined by u and v.
+  lambdaA <- t(v-u)%*%(midpts[,1]-u)/sum((v-u)^2)
+  lambdaB <- t(v-u)%*%(midpts[,2]-u)/sum((v-u)^2)
+  ptA <- (1-lambdaA)*u + lambdaA*v
+  ptB <- (1-lambdaB)*u + lambdaB*v
+  # Find their average and a unit vector pointing from their average toward
+  # ptA. This will be useful for moving both points outward.
+  avg <- (ptA+ptB)/2
+  outA <- (ptA-avg)/sqrt(sum((ptA-avg)^2))
+  # Find a unit vector at right angles (in a counter-clockwise sense) to the 
+  # line determined by u and v (equivalently, by ptA and ptB.)
+  perp <- c(cos(angle_in_radians + pi/2), sin(angle_in_radians + pi/2)) 
+  # Form the endpoints of a line segment of the given height, parallel to perp
+  # and centered at the origin.
+  ep1 <- +height*perp/2
+  ep2 <- -height*perp/2
+  # Translate the endpoint centers to ptA then move ptA outward 
+  # until the associated line segment fails to intersect tissue.
+  cnr1 <- ep1+ptA
+  cnr2 <- ep2+ptA
+  while(length(nonzeroPix(cnr1+gridsize*outA, cnr2+gridsize*outA, img, gridsize)) >0){
+    cnr1 <- cnr1+gridsize*outA
+    cnr2 <- cnr2+gridsize*outA
+  }
+  # Similarly for ptB
+  cnr4 <- ep1+ptB
+  cnr3 <- ep2+ptB
+  while(length(nonzeroPix(cnr3-gridsize*outA, cnr4-gridsize*outA, img, gridsize)) >0){
+    cnr3 <- cnr3-gridsize*outA
+    cnr4 <- cnr4-gridsize*outA
+  }
+  # Return the derived rectangle's 4 corners as a 4x2 array.
+  rbind(cnr1, cnr2, cnr3, cnr4)
 }
