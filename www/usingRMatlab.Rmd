@@ -1,0 +1,72 @@
+---
+title: "Sharing data between R and Matlab (or Octave)"
+author: "W. Bauer"
+date: "December 15, 2015"
+output: html_document
+---
+Though we've integrated the C version of genS with R on Linux, we've had trouble making it work with Matlab's and Octave's mex interface. Though the C version will run on both Windows and Linux as a stand alone binary, there is no immediately obvious way to save output from C to a Matlab format in a way which preserves precision. (I imagine there are common formats, but I haven't researched the topic.)
+
+However, R's R.matlab package can read and write *.mat files. Provided we can compile the C program to a dll on Windows, (following, say, Microsoft's Visual Studio instructions [here](https://msdn.microsoft.com/en-us/library/ms235636.aspx)) we should be able to run the C program from R and output a *.mat file on either operating system. The note illustrates the process on Linux.
+
+The R.matlab package is not included with R by default but is easy to install from the R console.
+
+```{r eval=FALSE}
+install.packages("R.matlab")
+```
+
+Once installed, the package must be loaded:
+
+```{r}
+library(R.matlab)
+```
+
+And the R program which calls the C version of genS must be sourced. (There is a bit of path trickery here. Please ignore it.)
+
+```{r }
+# Path trickery so that ctest.R can find the compiled C code.
+setwd("../")
+source("C/ctest.R")
+# Undo path trickery
+setwd("www")
+```
+
+Now I can run `genStest` to generate an S matrix and save it as a *.mat file. The `S=S` syntax following the file name, indicates that I want to save the matrix, `S`, with the name, S. The name comes first, the object second. I could have said, e.g., mySmatrix=S, instead.
+
+```{r}
+S <- genStest(60, 200, 4*.47)
+writeMat("S.mat", S=S)
+```
+
+Now I'll load the matrix from the *.mat file to Octave. (I can't easily execute Octave code in this Rmd file, so I've just copied and pasted it. Trust me.)
+
+```
+% Octave
+>> pwd
+ans = /home/wil/dev/r/crust
+>> load("S.mat")
+>> size(S)
+ans =
+
+    3600   12000
+>> S(1:5, 1:5)
+ans =
+
+   1.88000   1.88000   1.88000   1.88000   1.88000
+   0.00000   0.00000   0.00000   0.00000   0.00000
+   0.00000   0.00000   0.00000   0.00000   0.00000
+   0.00000   0.00000   0.00000   0.00000   0.00000
+   0.00000   0.00000   0.00000   0.00000   0.00000
+```
+
+As a check I'll check the dimensions and the 5x5 submatrix in R as well:
+
+```{r}
+dim(S)
+S[1:5, 1:5]
+```
+
+```{r echo=FALSE}
+# Remove the binary
+file.remove("S.mat")
+```
+
