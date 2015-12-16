@@ -1,0 +1,60 @@
+---
+title: "Illustrating use of pixelated thigh utilities"
+author: "W. Bauer"
+date: "December 16, 2015"
+output: html_document
+---
+
+This note is to illustrate the use of functions in file `R/pixelated_thigh_utilities.R`. Specifically, I'll derive two pairs of probe positions whose scan areas overlap. The overlaps will include veins relevant to DVT.
+
+```{r}
+source("../R/utilities.R")
+source("../R/pixelated_thigh_utils.R")
+```
+
+The functions of primary interest are `displayImage`, `minRect` (which computes a rectangle,) and `transducerPos` (which computes transducer positions from the output of minRect.) The following code illustrates their use.
+
+Whole thigh pixelated images with various pixel sizes are in the `data` directory. They are `csv` files which can be read with standard R functions, `read.csv` to read as an R `data.frame` and `as.matrix` to convert from `data.frame` to matrix.
+
+```{r fig.align='center', fig.show='hold'}
+img <- as.matrix(read.csv("../data/whole_thigh_32.csv"))
+```
+
+The pixels of the image are labeled with integers indicating tissue types. Ordinarily, these would be converted to slowness values, but that is unnecessary for present purposes. I've found two suitable rectangular sections by trial and error. They can be superimposed on the image as follows.
+
+```{r fig.align='center', fig.show='hold', fig.width=5.1}
+gridsize <- .47*128/32
+displayImage(img, gridsize, main="Two overlapping sections")
+# Compute first rectangular section
+sectionA <- minRect(img, gridsize, center=c(100, 73), angle_in_radians=pi/24, height=60)
+# Display it
+polygon(sectionA, lwd=3, border="blue")
+# Compute second rectangular section
+sectionB <- minRect(img, gridsize, center=c(105, 73), angle_in_radians=pi/2-pi/9, height=60)
+# Display it
+polygon(sectionB, lwd=3, border="black")
+```
+
+Function `transducerPos` calculates transducer coordinates from a rectangular section. Calculating transducer positions for each of the two rectangular sections, assuming probes of 32 transducers each, procedes as follows.
+
+```{r}
+# Compute transducer positions for each rectangular section
+probesA <- probePos(32, sectionA)
+probesB <- probePos(32, sectionB)
+# Inspect probesA
+str(probesA)
+```
+
+As can be seen, `probesA` is a list of two 32x2 matrices named probe1 and probe2 respectively. The rows of these matrices represent transducer positions. These can be superimposed on an image using the standard R function, `points`. Since 32 probes would be cluttered, I only plot every 4th one.
+
+```{r fig.align='center', fig.show='hold'}
+displayImage(img, gridsize, main="Two overlapping sections")
+polygon(sectionA, lwd=3, border="blue")
+polygon(sectionB, lwd=3, border="black")
+idx <- seq(1, 32, by=4)
+points(probesA$probe1[idx,1], probesA$probe1[idx,2], pch=19, col="green")
+points(probesA$probe2[idx,1], probesA$probe2[idx,2], pch=19, col="magenta")
+points(probesB$probe1[idx,1], probesB$probe1[idx,2], pch=19, col="green")
+points(probesB$probe2[idx,1], probesB$probe2[idx,2], pch=19, col="magenta")
+legend('topright', c("probe 1", "probe 2"), pch=19, col=c("green", "magenta"))
+```
